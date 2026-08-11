@@ -1,4 +1,4 @@
-const https = require('https');
+import https from 'node:https';
 
 export const config = {
   api: {
