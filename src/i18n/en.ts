@@ -149,6 +149,14 @@ export const en = {
     allCommodities: 'All Commodities',
     allMarkets: 'All Markets',
     searchKerala: 'Showing Kerala market data',
+    searchPlaceholder: 'Search commodity or market...',
+    allStates: 'All States',
+    allDistricts: 'All Districts',
+    min: 'Min',
+    max: 'Max',
+    updated: 'Updated',
+    noPrices: 'No prices found',
+    tryAdjusting: 'Try adjusting your search or filters.',
   },
   // Govt Schemes
   schemes: {
