@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { MapPin, Thermometer, Menu, Bell, User, Navigation } from 'lucide-react';
+import { MapPin, Menu, Bell, User, Navigation } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { reverseGeocode } from '../hooks/useGeolocation';
 

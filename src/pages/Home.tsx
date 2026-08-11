@@ -5,6 +5,7 @@ import {
   useScroll,
   useTransform,
   useSpring,
+  type Variants,
 } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -116,12 +117,12 @@ function useMagnet(strength = 0.35) {
 /* ─────────────────────────────────────────
    Stagger animation variants
 ───────────────────────────────────────── */
-const heroStagger = {
+const heroStagger: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.12 } },
 };
 
-const heroItem = {
+const heroItem: Variants = {
   hidden: { y: 40, opacity: 0 },
   visible: {
     y: 0,
@@ -130,7 +131,7 @@ const heroItem = {
   },
 };
 
-const cardVariant = {
+const cardVariant: Variants = {
   hidden: { y: 60, opacity: 0 },
   visible: (i: number) => ({
     y: 0,
@@ -145,7 +146,7 @@ const cardVariant = {
   }),
 };
 
-const trustVariant = {
+const trustVariant: Variants = {
   hidden: { y: 40, opacity: 0 },
   visible: (i: number) => ({
     y: 0,

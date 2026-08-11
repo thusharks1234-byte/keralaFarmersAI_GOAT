@@ -302,17 +302,6 @@ export const ml: TranslationKeys = {
     phone: 'ഫോൺ',
     office: 'ഓഫീസ്',
   },
-  market: {
-    searchPlaceholder: 'ഉൽപ്പന്നമോ വിപണിയോ തിരയുക...',
-    allStates: 'എല്ലാ സംസ്ഥാനങ്ങളും',
-    allDistricts: 'എല്ലാ ജില്ലകളും',
-    modalPrice: 'മാതൃകാ വില (₹ / ക്വിന്റൽ)',
-    min: 'കുറഞ്ഞത്',
-    max: 'കൂടിയത്',
-    updated: 'പുതുക്കിയത്',
-    noPrices: 'വിലകളൊന്നും കണ്ടെത്തിയില്ല',
-    tryAdjusting: 'നിങ്ങളുടെ തിരയൽ മാറ്റാൻ ശ്രമിക്കുക.'
-  },
   diseaseDoctor: {
     title: 'രോഗ ഡോക്ടർ',
     tagline: 'AI സസ്യരോഗ നിർണ്ണയം',

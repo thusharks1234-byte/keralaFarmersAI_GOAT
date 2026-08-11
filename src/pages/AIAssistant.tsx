@@ -131,7 +131,7 @@ export default function AIAssistant() {
     // Optimistic user message
     const tempMsg: ChatMessage = {
       id: 'temp-' + Date.now(),
-      session_id: session.id,
+      session_id: session!.id,
       role: 'user',
       content: userMsg,
       created_at: new Date().toISOString(),
@@ -141,14 +141,14 @@ export default function AIAssistant() {
     // Auto-title session from first message
     if (messages.length === 0) {
       const title = userMsg.slice(0, 60);
-      await supabase.from('chat_sessions').update({ title }).eq('id', session.id);
+      await supabase.from('chat_sessions').update({ title }).eq('id', session!.id);
       setSessions(prev => prev.map(s => s.id === session!.id ? { ...s, title } : s));
     }
 
     try {
       // Call the client-side orchestrator with automatic fallback
       await sendChatMessage(
-        session.id,
+        session!.id,
         userMsg,
         farmContext,
         language
@@ -158,7 +158,7 @@ export default function AIAssistant() {
       const { data: msgs } = await supabase
         .from('chat_messages')
         .select('*')
-        .eq('session_id', session.id)
+        .eq('session_id', session!.id)
         .order('created_at', { ascending: true });
       
       setMessages(msgs || []);

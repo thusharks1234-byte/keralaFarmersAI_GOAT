@@ -317,17 +317,6 @@ export const en = {
     phone: 'Phone',
     office: 'Office',
   },
-  market: {
-    searchPlaceholder: 'Search commodity or market...',
-    allStates: 'All States',
-    allDistricts: 'All Districts',
-    modalPrice: 'Modal Price (₹ / Quintal)',
-    min: 'Min',
-    max: 'Max',
-    updated: 'Updated',
-    noPrices: 'No prices found',
-    tryAdjusting: 'Try adjusting your search or filters.'
-  },
   diseaseDoctor: {
     title: 'Disease Doctor',
     tagline: 'AI Plant Pathologist',
