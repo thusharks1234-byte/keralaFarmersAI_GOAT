@@ -11,10 +11,10 @@ export default defineConfig({
   server: {
     proxy: {
       // Proxy PlantNet API requests to bypass CORS
-      '/plantnet-api': {
+      '/api/plantnet': {
         target: 'https://my-api.plantnet.org',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/plantnet-api/, ''),
+        rewrite: (path) => path.replace(/^\/api\/plantnet/, ''),
         secure: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {

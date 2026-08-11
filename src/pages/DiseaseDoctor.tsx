@@ -432,10 +432,8 @@ export default function DiseaseDoctor() {
       formData.append('organs', 'auto'); // use auto to support any plant part
 
       const PLANTNET_API_KEY = import.meta.env.VITE_PLANTNET_API_KEY as string;
-      // Use '/plantnet-api' proxy path in dev (Vite proxy) - bypasses CORS
-      const apiBase = import.meta.env.DEV
-        ? '/plantnet-api'
-        : 'https://my-api.plantnet.org';
+      // Use unified /api/plantnet proxy path which works in Dev (Vite proxy) and Prod (Vercel Edge function)
+      const apiBase = '/api/plantnet';
       const response = await fetch(
         `${apiBase}/v2/diseases/identify?api-key=${PLANTNET_API_KEY}&lang=en&nb-results=5&no-reject=true`,
         {
