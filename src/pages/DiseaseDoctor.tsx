@@ -541,7 +541,7 @@ export default function DiseaseDoctor() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginTop: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '24px', marginTop: '24px' }}>
         
         {/* Left Side: Upload & Action Panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -638,7 +638,7 @@ export default function DiseaseDoctor() {
             )}
 
             {/* Selection Options & Diagnostics Buttons */}
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap' }}>
               {!image ? (
                 <>
                   <button

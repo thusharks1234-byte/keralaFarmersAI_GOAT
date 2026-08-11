@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/plantnet/(.*)", "destination": "/api/plantnet" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
