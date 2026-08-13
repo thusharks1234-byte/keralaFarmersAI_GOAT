@@ -96,10 +96,9 @@ export function Topbar({ onMenuClick, pageTitle }: { onMenuClick?: () => void; p
   return (
     <header className="topbar" role="banner">
       <button
-        className="btn btn-ghost btn-icon"
+        className="btn btn-ghost btn-icon topbar-menu-btn"
         onClick={onMenuClick}
         aria-label="Toggle navigation menu"
-        style={{ display: 'none' }}
         id="menu-btn"
       >
         <Menu size={20} />

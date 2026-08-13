@@ -19,6 +19,13 @@ export function PublicNavbar() {
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
+  /* Close menu on resize to desktop */
+  useEffect(() => {
+    const handler = () => { if (window.innerWidth > 767) setMenuOpen(false); };
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   const navLinks = [
     { to: '/features', label: t.nav.features },
     { to: '/about', label: t.nav.about },
@@ -47,12 +54,25 @@ export function PublicNavbar() {
         Krishi Mithram
       </Link>
 
-      <nav className="nav-links" aria-label="Primary navigation" style={{ display: menuOpen ? 'flex' : undefined }}>
+      {/* Mobile overlay backdrop */}
+      {menuOpen && (
+        <div
+          className="nav-mobile-backdrop"
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <nav
+        className={`nav-links${menuOpen ? ' nav-links--open' : ''}`}
+        aria-label="Primary navigation"
+      >
         {navLinks.map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+            onClick={() => setMenuOpen(false)}
           >
             {label}
           </NavLink>
@@ -86,7 +106,7 @@ export function PublicNavbar() {
           </button>
         ) : (
           <>
-            <Link to="/login" className="btn btn-ghost btn-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            <Link to="/login" className="btn btn-ghost btn-sm nav-login-btn" style={{ color: 'rgba(255,255,255,0.8)' }}>
               {t.nav.login}
             </Link>
             <Link to="/signup" className="btn btn-primary btn-sm">
@@ -95,17 +115,17 @@ export function PublicNavbar() {
           </>
         )}
 
+        {/* Hamburger — CSS controls visibility */}
         <button
-          className="btn btn-ghost btn-icon"
-          style={{ color: 'white', display: 'none' }}
+          className="btn btn-ghost btn-icon nav-hamburger"
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
           id="hamburger"
         >
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
     </motion.header>
   );
 }
-

@@ -1819,7 +1819,7 @@ textarea.form-input {
 .hero-parallax-bg {
   position: absolute;
   inset: -20%;
-  background: url('/hero-bg.png') center / cover no-repeat;
+  background: url('/hero-bg.jpg') center / cover no-repeat;
   will-change: transform;
   z-index: 0;
 }
@@ -1827,12 +1827,7 @@ textarea.form-input {
 .hero-gradient-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    var(--hero-overlay-top) 0%,
-    rgba(5,25,15,0.22) 40%,
-    var(--hero-overlay-bottom) 100%
-  );
+  background: rgba(0, 0, 0, 0.4);
   z-index: 1;
 }
 
@@ -2226,4 +2221,596 @@ textarea.form-input {
     font-size: clamp(36px, 10vw, 56px);
   }
 }
+/* ============================================
+   MOBILE RESPONSIVENESS — COMPREHENSIVE FIXES
+   Added: additive-only, zero existing rules removed
+   ============================================ */
 
+/* ── 1. Global overflow prevention ── */
+html, body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+.app-shell {
+  overflow-x: hidden;
+}
+
+/* ── 2. Touch target baseline for all interactive elements ── */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exempt small icon-only or inline elements from min-width */
+.badge, .badge *, .task-dot,
+.typing-dot, .sidebar-section-label,
+.ornament-gem {
+  min-height: unset;
+  min-width: unset;
+}
+
+/* ── 3. Public Navbar — hamburger + mobile menu ── */
+
+/* Hide hamburger on desktop */
+.nav-hamburger {
+  display: none;
+  color: white;
+  padding: 8px;
+}
+
+/* Hide login link on very small screens to save space */
+@media (max-width: 480px) {
+  .nav-login-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Show hamburger, hide desktop links */
+  .nav-hamburger {
+    display: inline-flex;
+  }
+
+  .nav-links {
+    /* Hidden by default on mobile */
+    display: none;
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: rgba(7, 41, 29, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 16px 12px 24px;
+    gap: 4px;
+    z-index: 199;
+    border-bottom: 1px solid rgba(184,115,51,0.2);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  /* When open (state-driven class from React) */
+  .nav-links--open {
+    display: flex;
+  }
+
+  .nav-link {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: var(--radius-md);
+    width: 100%;
+    display: block;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .nav-link:hover, .nav-link.active {
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+
+  /* Mobile backdrop overlay */
+  .nav-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    top: 70px;
+    background: rgba(0,0,0,0.4);
+    z-index: 198;
+  }
+
+  /* Public navbar padding */
+  .public-navbar {
+    padding: 0 16px;
+    gap: 8px;
+  }
+
+  .nav-logo {
+    font-size: 17px;
+    flex: 1;
+  }
+
+  /* Page header (e.g., Features, About) */
+  .page-header {
+    padding: var(--space-8) var(--space-4);
+    margin-top: 70px;
+  }
+
+  .page-header h1 {
+    font-size: clamp(22px, 6vw, 32px);
+  }
+}
+
+/* ── 4. App Topbar — show hamburger on tablet/mobile ── */
+/* On desktop (>=1024px) hide menu btn — sidebar always visible */
+.topbar-menu-btn {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .topbar-menu-btn {
+    display: inline-flex;
+    color: var(--text-primary);
+  }
+
+  .topbar {
+    padding: 0 16px;
+    gap: 8px;
+  }
+
+  .topbar-title {
+    font-size: 15px;
+    /* Truncate long page titles */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+}
+
+@media (max-width: 767px) {
+  .topbar {
+    padding: 0 12px;
+    gap: 6px;
+  }
+
+  .topbar-title {
+    font-size: 14px;
+    max-width: 120px;
+  }
+
+  /* Hide weather chip on small screens to prevent overflow */
+  .topbar-chip {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-title {
+    max-width: 90px;
+  }
+}
+
+/* ── 5. Page content padding ── */
+@media (max-width: 767px) {
+  .page-content {
+    padding: 12px 12px;
+    padding-top: calc(var(--topbar-height) + 12px);
+    padding-bottom: 90px; /* above mobile bottom nav */
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content {
+    padding: 10px 10px;
+    padding-top: calc(var(--topbar-height) + 10px);
+    padding-bottom: 84px;
+  }
+}
+
+/* ── 6. Dashboard ── */
+@media (max-width: 767px) {
+  .dashboard-top-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-bottom-row {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .weather-temp {
+    font-size: 48px;
+  }
+}
+
+/* ── 7. Quick-access grid ── */
+@media (max-width: 480px) {
+  .quick-access-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .quick-tile {
+    padding: 14px 8px;
+  }
+
+  .quick-tile-icon {
+    font-size: 24px;
+  }
+
+  .quick-tile-label {
+    font-size: 10px;
+  }
+}
+
+/* ── 8. Section headers ── */
+@media (max-width: 640px) {
+  .section-header {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+}
+
+/* ── 9. Cards ── */
+@media (max-width: 480px) {
+  .card {
+    padding: 16px;
+  }
+}
+
+/* ── 10. Auth pages ── */
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 28px 20px;
+    border-radius: var(--radius-lg);
+  }
+
+  .auth-logo-text {
+    font-size: 22px;
+  }
+
+  .auth-page {
+    padding: var(--space-4);
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+}
+
+/* ── 11. Hero (editorial landing) ── */
+@media (max-width: 767px) {
+  .hero-content-wrapper {
+    padding: 90px 20px 60px;
+  }
+
+  .hero-eyebrow {
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+  }
+
+  .hero-headline {
+    font-size: clamp(32px, 9vw, 52px);
+    letter-spacing: -0.3px;
+  }
+
+  .hero-subline {
+    font-size: clamp(14px, 4vw, 17px);
+    margin-bottom: 32px;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 340px;
+    gap: 12px;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-ghost {
+    width: 100%;
+    justify-content: center;
+    padding: 15px 24px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-content-wrapper {
+    padding: 80px 16px 48px;
+  }
+
+  .hero-headline {
+    font-size: clamp(28px, 10vw, 42px);
+  }
+}
+
+/* ── 12. Feature cards grid ── */
+@media (max-width: 767px) {
+  .feature-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .feature-card-premium {
+    padding: 28px 24px;
+  }
+
+  .feature-icon-emblem {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 20px;
+  }
+
+  .features-section {
+    padding: 60px 16px;
+  }
+
+  .features-section-header {
+    margin-bottom: 40px;
+  }
+
+  .section-title-serif {
+    font-size: clamp(24px, 6vw, 36px);
+  }
+}
+
+/* ── 13. Trust section ── */
+@media (max-width: 767px) {
+  .trust-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 32px;
+  }
+
+  .trust-card {
+    padding: 28px 20px;
+  }
+
+  .trust-section {
+    padding: 60px 16px;
+  }
+}
+
+/* ── 14. Footer ── */
+@media (max-width: 767px) {
+  .footer {
+    padding: var(--space-8) var(--space-5) var(--space-6);
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: center;
+  }
+
+  .footer-bottom div {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+}
+
+/* ── 15. Tabs — scrollable row on mobile ── */
+@media (max-width: 640px) {
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    flex-shrink: 0;
+    min-width: fit-content;
+    padding: var(--space-2) var(--space-3);
+    font-size: 13px;
+  }
+}
+
+/* ── 16. Modal ── */
+@media (max-width: 640px) {
+  .modal {
+    padding: var(--space-5) var(--space-4);
+    border-radius: var(--radius-lg);
+    margin: var(--space-4);
+    max-width: calc(100vw - 32px);
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: var(--space-3);
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-title {
+    font-size: 17px;
+  }
+}
+
+/* ── 17. Chat / AI Assistant ── */
+@media (max-width: 767px) {
+  .chat-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: calc(100vh - var(--topbar-height) - 90px);
+  }
+
+  .chat-sessions {
+    display: none;
+  }
+
+  .chat-messages {
+    padding: var(--space-4);
+  }
+
+  .chat-message {
+    max-width: 92%;
+  }
+
+  .chat-composer {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+/* ── 18. Crop advisor ── */
+@media (max-width: 767px) {
+  .crop-advisor-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 19. Forecast strip — already scrolls, improve touch ── */
+.forecast-strip {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.forecast-strip::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .forecast-day {
+    min-width: 80px;
+    padding: var(--space-3);
+  }
+
+  .weather-hero {
+    padding: var(--space-5);
+  }
+}
+
+/* ── 20. Grid utilities collapse ── */
+@media (max-width: 767px) {
+  .grid-3, .grid-4, .grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-2, .grid-3, .grid-4, .grid-5 {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+}
+
+/* ── 21. Scheme cards ── */
+@media (max-width: 480px) {
+  .scheme-card {
+    padding: var(--space-4);
+  }
+}
+
+/* ── 22. Mobile bottom nav touch targets ── */
+@media (max-width: 1023px) {
+  .mobile-nav-item {
+    min-height: 56px;
+    padding: var(--space-2) var(--space-3);
+    min-width: 52px;
+  }
+
+  .mobile-bottom-nav {
+    padding: 4px 8px;
+    /* safe area for phones with home indicator */
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── 23. Coming-soon / empty states ── */
+@media (max-width: 480px) {
+  .coming-soon-emoji {
+    font-size: 52px;
+  }
+
+  .coming-soon-content {
+    padding: 0 var(--space-4);
+  }
+
+  .empty-state {
+    padding: var(--space-8) var(--space-4);
+  }
+}
+
+/* ── 24. Buttons — full-width helpers on mobile ── */
+@media (max-width: 480px) {
+  .btn-lg {
+    padding: var(--space-3) var(--space-6);
+    font-size: 15px;
+  }
+}
+
+/* ── 25. Images & media — prevent any overflow ── */
+img, svg, video, canvas, iframe {
+  max-width: 100%;
+}
+
+/* ── 26. Form elements — comfortable on mobile ── */
+@media (max-width: 640px) {
+  .form-input, .form-select {
+    font-size: 16px; /* prevent iOS zoom on focus */
+    padding: 12px 14px;
+  }
+
+  textarea.form-input {
+    min-height: 88px;
+  }
+}
+
+/* ── 27. Typography adjustments ── */
+@media (max-width: 480px) {
+  .text-h3 {
+    font-size: 19px;
+  }
+
+  .text-h4 {
+    font-size: 16px;
+  }
+
+  .text-display {
+    font-size: clamp(28px, 9vw, 44px);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .section-subtitle {
+    font-size: 15px;
+  }
+}
+
+/* ── 28. Sidebar — ensure open state stacks on top on mobile ── */
+@media (max-width: 1023px) {
+  .sidebar {
+    z-index: 101; /* above topbar overlay */
+    width: min(280px, 85vw);
+  }
+}

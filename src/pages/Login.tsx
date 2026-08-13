@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
-import { Sprout, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Sprout, Eye, EyeOff, Loader2, X } from 'lucide-react';
 
 export default function Login() {
   const { t, language, setLanguage } = useLanguage();
@@ -37,7 +37,27 @@ export default function Login() {
 
   return (
     <div className="auth-page animate-fade-in">
-      <div className="auth-card animate-slide-up">
+      <div className="auth-card animate-slide-up" style={{ position: 'relative' }}>
+        <Link 
+          to="/" 
+          style={{ 
+            position: 'absolute', 
+            top: '20px', 
+            right: '20px', 
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '4px',
+            borderRadius: '50%',
+            transition: 'background 0.2s'
+          }}
+          aria-label="Go back to home"
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--light-green-100)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          <X size={20} />
+        </Link>
         <div className="auth-logo">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
             <Sprout size={28} style={{ color: 'var(--agri-green-600)' }} />
