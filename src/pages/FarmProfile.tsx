@@ -359,10 +359,7 @@ export default function FarmProfile() {
                   <option value="kari">Kari (Peaty)</option>
                 </select>
               </div>
-              <div className="form-group">
-                <label className="form-label">{t.profile.ph}</label>
-                <input type="number" step="0.1" className="form-input" value={soil.ph || ''} onChange={e => setSoil({...soil, ph: parseFloat(e.target.value)})} placeholder="e.g. 6.5" />
-              </div>
+
               <div className="form-group">
                 <label className="form-label">{t.profile.waterAvailability}</label>
                 <select className="form-input form-select" value={soil.water_availability || ''} onChange={e => setSoil({...soil, water_availability: e.target.value})}>
@@ -371,18 +368,6 @@ export default function FarmProfile() {
                   <option value="canal">Canal Irrigation</option>
                   <option value="well irrigation">Well / Borewell</option>
                 </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t.profile.nitrogen}</label>
-                <input type="number" className="form-input" value={soil.nitrogen || ''} onChange={e => setSoil({...soil, nitrogen: parseInt(e.target.value)})} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t.profile.phosphorus}</label>
-                <input type="number" className="form-input" value={soil.phosphorus || ''} onChange={e => setSoil({...soil, phosphorus: parseInt(e.target.value)})} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t.profile.potassium}</label>
-                <input type="number" className="form-input" value={soil.potassium || ''} onChange={e => setSoil({...soil, potassium: parseInt(e.target.value)})} />
               </div>
             </div>
           )}
