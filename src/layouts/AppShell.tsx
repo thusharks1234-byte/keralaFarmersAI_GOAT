@@ -49,14 +49,14 @@ export function AppShell() {
         />
       )}
 
-      <Sidebar onClose={() => setSidebarOpen(false)} />
+      <Sidebar onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} />
 
       <div className="app-main">
         <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <main id="main-content" className="page-content">
           <Outlet />
         </main>
-        <MobileBottomNav />
+        <MobileBottomNav onMoreClick={() => setSidebarOpen(true)} />
       </div>
     </div>
   );

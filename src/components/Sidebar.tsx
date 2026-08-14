@@ -23,7 +23,7 @@ const BOTTOM_ITEMS = [
   { to: '/settings', icon: Settings, labelKey: 'settings' as const },
 ];
 
-export function Sidebar({ onClose }: { onClose?: () => void }) {
+export function Sidebar({ onClose, isOpen }: { onClose?: () => void; isOpen?: boolean }) {
   const { signOut } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <aside className="sidebar" role="navigation" aria-label="Main navigation">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`} role="navigation" aria-label="Main navigation">
       <div className="sidebar-logo">
         <div className="sidebar-logo-text">
           <Sprout size={22} style={{ color: 'var(--leaf-green-400)' }} />

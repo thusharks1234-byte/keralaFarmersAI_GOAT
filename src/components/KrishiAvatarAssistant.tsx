@@ -68,16 +68,84 @@ function injectStyles() {
       50%       { ry: 3px; }
     }
 
-    .krishi-container {
+        .krishi-widget-card {
       font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif;
       position: fixed;
       bottom: 24px;
       right: 24px;
       z-index: 99999;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 20px;
+      padding: 30px 20px 20px;
+      width: calc(100vw - 40px);
+      max-width: 300px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 10px;
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+
+    .krishi-widget-card.open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .krishi-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #666;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      outline: none;
+    }
+    .krishi-close-btn:hover {
+      background: rgba(0,0,0,0.05);
+      color: #333;
+    }
+
+    .krishi-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99999;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      box-shadow: 0 4px 14px rgba(22,163,74,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.25s, box-shadow 0.25s, opacity 0.3s, transform 0.3s;
+      border: none;
+      outline: none;
+    }
+    .krishi-fab:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(22,163,74,0.55);
+    }
+    .krishi-fab.hidden {
+      opacity: 0;
+      transform: scale(0.5);
       pointer-events: none;
     }
 
@@ -92,7 +160,6 @@ function injectStyles() {
       line-height: 1.6;
       box-shadow: 0 4px 20px rgba(0,0,0,0.12);
       animation: krishi-slide-up 0.3s ease forwards;
-      pointer-events: auto;
     }
 
     .krishi-transcript strong {
@@ -105,7 +172,6 @@ function injectStyles() {
 
     .krishi-avatar-wrapper {
       position: relative;
-      pointer-events: auto;
       cursor: pointer;
       user-select: none;
     }
@@ -226,7 +292,7 @@ function injectStyles() {
 
     /* ── Mobile: reposition above bottom nav, scale down ── */
     @media (max-width: 1023px) {
-      .krishi-container {
+      .krishi-widget-card, .krishi-fab {
         bottom: 90px;
         right: 16px;
       }
@@ -248,7 +314,7 @@ function injectStyles() {
     }
 
     @media (max-width: 480px) {
-      .krishi-container {
+      .krishi-widget-card, .krishi-fab {
         bottom: 84px;
         right: 12px;
         gap: 7px;
@@ -339,6 +405,7 @@ const AvatarSVG: React.FC<AvatarSVGProps> = ({ speaking }) => (
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const KrishiAvatarAssistant: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -360,8 +427,8 @@ const KrishiAvatarAssistant: React.FC = () => {
     utterance.pitch = 1.05;
 
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onend = () => { setIsSpeaking(false); setIsOpen(false); };
+    utterance.onerror = () => { setIsSpeaking(false); setIsOpen(false); };
 
     synth.speak(utterance);
   };
@@ -441,84 +508,98 @@ const KrishiAvatarAssistant: React.FC = () => {
   };
 
   return (
-    <div className="krishi-container">
-      {/* Transcript bubble */}
-      {transcript && (
-        <div className="krishi-transcript">
-          <strong>You said:</strong>
-          {transcript}
-        </div>
-      )}
+    <>
+      <div className={`krishi-widget-card ${isOpen ? 'open' : ''}`}>
+        <button className="krishi-close-btn" onClick={() => setIsOpen(false)} aria-label="Close widget">
+          ✕
+        </button>
 
-      {/* Avatar */}
-      <div
-        className="krishi-avatar-wrapper"
-        onClick={handleAvatarClick}
-        title="Tap to speak"
-        role="button"
-        aria-label={isSpeaking ? 'Avatar speaking — click to stop' : 'Click to start voice assistant'}
-      >
-        {/* Ripple rings when listening */}
-        {isListening && (
-          <>
-            <div className="krishi-ripple" />
-            <div className="krishi-ripple krishi-ripple-2" />
-          </>
+        {/* Transcript bubble */}
+        {transcript && (
+          <div className="krishi-transcript">
+            <strong>You said:</strong>
+            {transcript}
+          </div>
         )}
 
-        <div className={`krishi-avatar-bg ${isSpeaking || isThinking ? 'speaking' : 'idle'}`}>
-          <AvatarSVG speaking={isSpeaking} />
-          {isSpeaking && <div className="krishi-badge">🔊</div>}
-          {isThinking && !isSpeaking && <div className="krishi-badge">⏳</div>}
+        {/* Avatar */}
+        <div
+          className="krishi-avatar-wrapper"
+          onClick={handleAvatarClick}
+          title="Tap to speak"
+          role="button"
+          aria-label={isSpeaking ? 'Avatar speaking — click to stop' : 'Click to start voice assistant'}
+        >
+          {/* Ripple rings when listening */}
+          {isListening && (
+            <>
+              <div className="krishi-ripple" />
+              <div className="krishi-ripple krishi-ripple-2" />
+            </>
+          )}
+
+          <div className={`krishi-avatar-bg ${isSpeaking || isThinking ? 'speaking' : 'idle'}`}>
+            <AvatarSVG speaking={isSpeaking} />
+            {isSpeaking && <div className="krishi-badge">🔊</div>}
+            {isThinking && !isSpeaking && <div className="krishi-badge">⏳</div>}
+          </div>
+
+          {/* Status label below avatar */}
+          <span className="krishi-label">
+            {isThinking ? 'Thinking...' : isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : 'Krishimithram'}
+          </span>
         </div>
 
-        {/* Status label below avatar */}
-        <span className="krishi-label">
-          {isThinking ? 'Thinking...' : isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : 'Krishimithram'}
-        </span>
+        {/* Language Toggle Row */}
+        <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto', marginTop: '10px' }}>
+          {[
+            { code: 'en-IN', label: 'English' },
+            { code: 'ml-IN', label: 'മലയാളം' },
+            { code: 'hi-IN', label: 'हिंदी' },
+          ].map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => setSelectedLang(lang.code)}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '14px',
+                border: '1px solid ' + (selectedLang === lang.code ? '#16a34a' : 'rgba(34,197,94,0.3)'),
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: selectedLang === lang.code ? '#16a34a' : 'rgba(255,255,255,0.95)',
+                color: selectedLang === lang.code ? '#fff' : '#14532d',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s',
+                fontFamily: 'inherit'
+              }}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Mic trigger button */}
+        <button
+          className={`krishi-mic-btn ${isListening ? 'listening' : 'idle'}`}
+          onClick={startListening}
+          disabled={isSpeaking || isThinking}
+          aria-label={isListening ? 'Listening' : 'Start voice assistant'}
+          style={{ marginTop: '4px' }}
+        >
+          <span style={{ fontSize: '16px' }}>{isListening ? '🎙️' : '🎤'}</span>
+          {isListening ? 'Listening...' : isThinking ? 'Thinking...' : 'Tap to Speak'}
+        </button>
       </div>
 
-      {/* Language Toggle Row */}
-      <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto', marginTop: '10px' }}>
-        {[
-          { code: 'en-IN', label: 'English' },
-          { code: 'ml-IN', label: 'മലയാളം' },
-          { code: 'hi-IN', label: 'हिंदी' },
-        ].map((lang) => (
-          <button
-            key={lang.code}
-            onClick={() => setSelectedLang(lang.code)}
-            style={{
-              padding: '5px 12px',
-              borderRadius: '14px',
-              border: '1px solid ' + (selectedLang === lang.code ? '#16a34a' : 'rgba(34,197,94,0.3)'),
-              fontSize: '11px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              background: selectedLang === lang.code ? '#16a34a' : 'rgba(255,255,255,0.95)',
-              color: selectedLang === lang.code ? '#fff' : '#14532d',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s',
-              fontFamily: 'inherit'
-            }}
-          >
-            {lang.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Mic trigger button */}
-      <button
-        className={`krishi-mic-btn ${isListening ? 'listening' : 'idle'}`}
-        onClick={startListening}
-        disabled={isSpeaking || isThinking}
-        aria-label={isListening ? 'Listening' : 'Start voice assistant'}
-        style={{ marginTop: '4px' }}
+      <button 
+        className={`krishi-fab ${isOpen ? 'hidden' : ''}`}
+        onClick={() => setIsOpen(true)}
+        aria-label="Open Krishimithram Assistant"
       >
-        <span style={{ fontSize: '16px' }}>{isListening ? '🎙️' : '🎤'}</span>
-        {isListening ? 'Listening...' : isThinking ? 'Thinking...' : 'Tap to Speak'}
+        <span style={{ fontSize: '24px' }}>🎙️</span>
       </button>
-    </div>
+    </>
   );
 };
 

@@ -10,7 +10,7 @@ const BOTTOM_NAV = [
   { to: '/market-prices', icon: TrendingUp, labelKey: 'marketPrices' as const },
 ];
 
-export function MobileBottomNav() {
+export function MobileBottomNav({ onMoreClick }: { onMoreClick?: () => void }) {
   const { t } = useLanguage();
 
   return (
@@ -26,7 +26,7 @@ export function MobileBottomNav() {
             <span>{t.nav[labelKey].split(' ')[0]}</span>
           </NavLink>
         ))}
-        <div className="mobile-nav-item">
+        <div className="mobile-nav-item" onClick={onMoreClick}>
           <MoreHorizontal size={22} />
           <span>More</span>
         </div>
