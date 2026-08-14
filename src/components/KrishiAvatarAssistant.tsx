@@ -342,18 +342,20 @@ const KrishiAvatarAssistant: React.FC = () => {
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [selectedLang, setSelectedLang] = useState('ml-IN');
 
   useEffect(() => {
     injectStyles();
   }, []);
 
-  // 3. Speak back in Malayalam
-  const speak = (replyText: string) => {
+  // 3. Speak back dynamically
+  const speak = (replyText: string, langCode: string = 'en-IN') => {
     const synth = window.speechSynthesis;
     synth.cancel();
 
     const utterance = new SpeechSynthesisUtterance(replyText);
-    utterance.lang = 'ml-IN';
+    utterance.lang = langCode;
     utterance.rate = 0.95;
     utterance.pitch = 1.05;
 
@@ -364,37 +366,54 @@ const KrishiAvatarAssistant: React.FC = () => {
     synth.speak(utterance);
   };
 
-  // 2. Process Malayalam commands
-  const processCommand = (command: string) => {
-    const text = command.toLowerCase();
+  // 2. Process commands using Gemini API
+  const processCommand = async (command: string) => {
+    setIsThinking(true);
+    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+    
+    const prompt = "You are Krishimithram, an agricultural AI assistant. The user is asking a farming question. You MUST reply briefly in 1 to 2 short sentences strictly in the language matching this locale code: " + selectedLang + ". Question: " + command;
 
-    if (text.includes('കാലാവസ്ഥ') || text.includes('മഴ')) {
-      speak('ഇന്ന് നല്ല കാലാവസ്ഥയാണ്. കൃഷിക്ക് അനുയോജ്യമാണ്.');
-    } else if (text.includes('വില') || text.includes('മാർക്കറ്റ്')) {
-      speak('ഇന്നത്തെ വിപണി വില വിവരങ്ങൾ പരിശോധിക്കുക. ടൊമാറ്റോ ഒരു കിലോ ഇരുപത് രൂപ.');
-    } else if (text.includes('വളം') || text.includes('കൃഷി')) {
-      speak('കൃഷിമിത്രം ആപ്പ് ഉപയോഗിച്ച് ഏറ്റവും നല്ല കൃഷി ഉപദേശം നേടൂ.');
-    } else if (text.includes('രോഗം') || text.includes('ചെടി')) {
-      speak('ചെടിയുടെ ഫോട്ടോ എടുത്ത് ഡിസീസ് ഡോക്ടർ ഫീച്ചർ ഉപയോഗിക്കൂ.');
-    } else if (text.includes('സ്കീം') || text.includes('സർക്കാർ')) {
-      speak('പ്രധാൻ മന്ത്രി കൃഷി സിഞ്ചായി യോജന, കിസാൻ ക്രെഡിറ്റ് കാർഡ് തുടങ്ങിയ സർക്കാർ പദ്ധതികൾ ലഭ്യമാണ്.');
-    } else {
-      speak('താങ്കൾ പറഞ്ഞത്: ' + command + '. കൃഷിയുമായി ബന്ധപ്പെട്ട് എന്ത് സഹായമാണ് വേണ്ടത്?');
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API Error');
+      }
+
+      const data = await response.json();
+      const rawText = data.candidates[0].content.parts[0].text;
+      
+      speak(rawText, selectedLang);
+    } catch (error) {
+      console.error("Error processing command:", error);
+      speak("I am unable to connect right now.", "en-US");
+      setIsSpeaking(false);
+    } finally {
+      setIsThinking(false);
     }
   };
 
-  // 1. Listen in Malayalam
+  // 1. Listen multilingually
   const startListening = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      speak('ക്ഷമിക്കണം. ഈ ബ്രൗസർ ശബ്ദ തിരിച്ചറിയൽ പിന്തുണയ്ക്കുന്നില്ല. ദയവായി Chrome ഉപയോഗിക്കൂ.');
+      speak('Sorry, this browser does not support speech recognition.', 'en-US');
       return;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'ml-IN';
+    recognition.lang = selectedLang;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
@@ -416,7 +435,7 @@ const KrishiAvatarAssistant: React.FC = () => {
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
-    } else if (!isListening) {
+    } else if (!isListening && !isThinking) {
       startListening();
     }
   };
@@ -426,7 +445,7 @@ const KrishiAvatarAssistant: React.FC = () => {
       {/* Transcript bubble */}
       {transcript && (
         <div className="krishi-transcript">
-          <strong>നിങ്ങൾ ചോദിച്ചത്:</strong>
+          <strong>You said:</strong>
           {transcript}
         </div>
       )}
@@ -435,9 +454,9 @@ const KrishiAvatarAssistant: React.FC = () => {
       <div
         className="krishi-avatar-wrapper"
         onClick={handleAvatarClick}
-        title="മലയാളത്തിൽ സംസാരിക്കൂ"
+        title="Tap to speak"
         role="button"
-        aria-label={isSpeaking ? 'Avatar speaking — click to stop' : 'Click to start Malayalam voice assistant'}
+        aria-label={isSpeaking ? 'Avatar speaking — click to stop' : 'Click to start voice assistant'}
       >
         {/* Ripple rings when listening */}
         {isListening && (
@@ -447,27 +466,57 @@ const KrishiAvatarAssistant: React.FC = () => {
           </>
         )}
 
-        <div className={`krishi-avatar-bg ${isSpeaking ? 'speaking' : 'idle'}`}>
+        <div className={`krishi-avatar-bg ${isSpeaking || isThinking ? 'speaking' : 'idle'}`}>
           <AvatarSVG speaking={isSpeaking} />
           {isSpeaking && <div className="krishi-badge">🔊</div>}
+          {isThinking && !isSpeaking && <div className="krishi-badge">⏳</div>}
         </div>
 
         {/* Status label below avatar */}
         <span className="krishi-label">
-          {isSpeaking ? 'സംസാരിക്കുന്നു...' : isListening ? 'കേൾക്കുന്നു...' : 'കൃഷിമിത്രം'}
+          {isThinking ? 'Thinking...' : isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : 'Krishimithram'}
         </span>
+      </div>
+
+      {/* Language Toggle Row */}
+      <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto', marginTop: '10px' }}>
+        {[
+          { code: 'en-IN', label: 'English' },
+          { code: 'ml-IN', label: 'മലയാളം' },
+          { code: 'hi-IN', label: 'हिंदी' },
+        ].map((lang) => (
+          <button
+            key={lang.code}
+            onClick={() => setSelectedLang(lang.code)}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '14px',
+              border: '1px solid ' + (selectedLang === lang.code ? '#16a34a' : 'rgba(34,197,94,0.3)'),
+              fontSize: '11px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              background: selectedLang === lang.code ? '#16a34a' : 'rgba(255,255,255,0.95)',
+              color: selectedLang === lang.code ? '#fff' : '#14532d',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s',
+              fontFamily: 'inherit'
+            }}
+          >
+            {lang.label}
+          </button>
+        ))}
       </div>
 
       {/* Mic trigger button */}
       <button
         className={`krishi-mic-btn ${isListening ? 'listening' : 'idle'}`}
         onClick={startListening}
-        disabled={isSpeaking}
-        aria-label={isListening ? 'Listening in Malayalam' : 'Start Malayalam voice assistant'}
-        style={{ marginTop: '28px' }}
+        disabled={isSpeaking || isThinking}
+        aria-label={isListening ? 'Listening' : 'Start voice assistant'}
+        style={{ marginTop: '4px' }}
       >
         <span style={{ fontSize: '16px' }}>{isListening ? '🎙️' : '🎤'}</span>
-        {isListening ? 'കേൾക്കുന്നു...' : 'സംസാരിക്കൂ'}
+        {isListening ? 'Listening...' : isThinking ? 'Thinking...' : 'Tap to Speak'}
       </button>
     </div>
   );
