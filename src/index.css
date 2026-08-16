@@ -104,6 +104,7 @@ body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* prevent horizontal scroll on all screens */
 }
 
 :lang(ml) {
@@ -699,6 +700,8 @@ textarea.form-input {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  /* Mobile: keep within viewport */
+  max-width: calc(100vw - 24px);
 }
 
 .toast {
@@ -1819,6 +1822,8 @@ textarea.form-input {
 .hero-parallax-bg {
   position: absolute;
   inset: -20%;
+  /* Clamp so wide inset never causes horizontal scroll */
+  max-width: calc(100% + 40%);
   background: url('/hero-bg.jpg') center / cover no-repeat;
   will-change: transform;
   z-index: 0;
@@ -2205,22 +2210,7 @@ textarea.form-input {
   flex-shrink: 0;
 }
 
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .feature-cards-grid {
-    grid-template-columns: 1fr;
-  }
-  .trust-cards-grid {
-    grid-template-columns: 1fr;
-  }
-  .hero-cta-group {
-    flex-direction: column;
-    align-items: center;
-  }
-  .hero-headline {
-    font-size: clamp(36px, 10vw, 56px);
-  }
-}
+/* ── Responsive ── (duplicate 768px block removed; handled by the 767px block below) */
 /* ============================================
    MOBILE RESPONSIVENESS — COMPREHENSIVE FIXES
    Added: additive-only, zero existing rules removed
@@ -2242,10 +2232,14 @@ button, a, [role="button"] {
   min-width: 44px;
 }
 
-/* Exempt small icon-only or inline elements from min-width */
-.badge, .badge *, .task-dot,
-.typing-dot, .sidebar-section-label,
-.ornament-gem {
+/* Exempt small decorative / inline elements from the 44px override */
+.badge, .badge *,
+.task-dot, .typing-dot,
+.sidebar-section-label, .ornament-gem,
+.source-badge, .calendar-date,
+.sidebar-logo-sub, .lang-btn,
+.coming-soon-badge-large,
+.topbar-chip, .topbar-chip * {
   min-height: unset;
   min-width: unset;
 }
@@ -2395,7 +2389,8 @@ button, a, [role="button"] {
   .page-content {
     padding: 12px 12px;
     padding-top: calc(var(--topbar-height) + 12px);
-    padding-bottom: 90px; /* above mobile bottom nav */
+    /* Above mobile bottom nav + iOS safe area inset */
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -2403,7 +2398,7 @@ button, a, [role="button"] {
   .page-content {
     padding: 10px 10px;
     padding-top: calc(var(--topbar-height) + 10px);
-    padding-bottom: 84px;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -2605,6 +2600,35 @@ button, a, [role="button"] {
   .footer-grid {
     grid-template-columns: 1fr;
     gap: var(--space-5);
+  }
+}
+
+/* ── 14b. Toast container — keep on-screen on small phones ── */
+@media (max-width: 640px) {
+  .toast-container {
+    right: 12px;
+    left: 12px;
+    bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+    max-width: 100%;
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+/* ── 14c. Feature card padding on very small screens ── */
+@media (max-width: 375px) {
+  .feature-card-premium {
+    padding: 22px 18px;
+  }
+
+  .feature-icon-emblem {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 16px;
   }
 }
 

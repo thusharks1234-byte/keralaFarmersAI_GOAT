@@ -610,6 +610,7 @@ export default function DiseaseDoctor() {
                 <img
                   src={image}
                   alt={t.diseaseDoctor.preview}
+                  loading="lazy"
                   style={{ width: '100%', height: '280px', objectFit: 'cover', display: 'block' }}
                 />
                 <div style={{

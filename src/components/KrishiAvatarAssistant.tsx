@@ -462,8 +462,11 @@ const KrishiAvatarAssistant: React.FC = () => {
       speak(rawText, selectedLang);
     } catch (error) {
       console.error("Error processing command:", error);
-      speak("I am unable to connect right now.", "en-US");
+      // Cancel any pending speech and reset state cleanly
+      window.speechSynthesis.cancel();
       setIsSpeaking(false);
+      // Show user-friendly error in the transcript bubble
+      setTranscript('⚠️ Could not connect. Please check your internet and try again.');
     } finally {
       setIsThinking(false);
     }
@@ -471,11 +474,14 @@ const KrishiAvatarAssistant: React.FC = () => {
 
   // 1. Listen multilingually
   const startListening = () => {
+    // Guard: do not allow new listen while thinking or already listening
+    if (isListening || isThinking || isSpeaking) return;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      speak('Sorry, this browser does not support speech recognition.', 'en-US');
+      setTranscript('⚠️ Speech recognition is not supported by your browser.');
       return;
     }
 
@@ -486,7 +492,18 @@ const KrishiAvatarAssistant: React.FC = () => {
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      // Map common error codes to friendly messages
+      const messages: Record<string, string> = {
+        'not-allowed': '⚠️ Microphone access denied. Please allow mic permission.',
+        'no-speech': '⚠️ No speech detected. Please try again.',
+        'network': '⚠️ Network error. Please check your connection.',
+        'aborted': '',
+      };
+      const msg = messages[event.error] ?? `⚠️ Speech error: ${event.error}`;
+      if (msg) setTranscript(msg);
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
@@ -495,7 +512,13 @@ const KrishiAvatarAssistant: React.FC = () => {
       processCommand(command);
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+      setIsListening(false);
+      setTranscript('⚠️ Could not start microphone. Please try again.');
+    }
   };
 
   const handleAvatarClick = () => {
@@ -551,7 +574,7 @@ const KrishiAvatarAssistant: React.FC = () => {
         </div>
 
         {/* Language Toggle Row */}
-        <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto', marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto', marginTop: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {[
             { code: 'en-IN', label: 'English' },
             { code: 'ml-IN', label: 'മലയാളം' },
@@ -561,7 +584,8 @@ const KrishiAvatarAssistant: React.FC = () => {
               key={lang.code}
               onClick={() => setSelectedLang(lang.code)}
               style={{
-                padding: '5px 12px',
+                padding: '10px 16px',
+                minHeight: '44px',
                 borderRadius: '14px',
                 border: '1px solid ' + (selectedLang === lang.code ? '#16a34a' : 'rgba(34,197,94,0.3)'),
                 fontSize: '11px',

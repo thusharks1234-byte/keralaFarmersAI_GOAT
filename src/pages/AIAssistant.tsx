@@ -53,16 +53,20 @@ export default function AIAssistant() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data } = await supabase
+      const { data, error: supaErr } = await supabase
         .from('chat_sessions')
         .select('*')
         .eq('owner_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(20);
+      if (supaErr) throw supaErr;
       setSessions(data || []);
       if (data && data.length > 0 && !currentSession) {
         selectSession(data[0]);
       }
+    } catch (err) {
+      console.error('Failed to load chat sessions:', err);
+      setError('Could not load conversations. Please refresh and try again.');
     } finally {
       setLoading(false);
     }

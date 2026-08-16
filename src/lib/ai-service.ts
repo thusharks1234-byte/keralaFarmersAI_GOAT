@@ -161,12 +161,16 @@ export async function sendChatMessage(
   lang: string
 ): Promise<{ reply: string; provider: string }> {
 
-  // Save user message
-  await supabase.from('chat_messages').insert({
-    session_id: sessionId,
-    role: 'user',
-    content: message,
-  });
+  // Save user message — non-fatal if DB is temporarily unreachable
+  try {
+    await supabase.from('chat_messages').insert({
+      session_id: sessionId,
+      role: 'user',
+      content: message,
+    });
+  } catch (dbErr) {
+    console.warn('Could not save user message to DB:', dbErr);
+  }
 
   let reply = '';
   let provider = '';
@@ -203,18 +207,26 @@ export async function sendChatMessage(
     }
   }
 
-  // Save assistant reply
-  await supabase.from('chat_messages').insert({
-    session_id: sessionId,
-    role: 'assistant',
-    content: reply,
-  });
+  // Save assistant reply — non-fatal if DB write fails
+  try {
+    await supabase.from('chat_messages').insert({
+      session_id: sessionId,
+      role: 'assistant',
+      content: reply,
+    });
+  } catch (dbErr) {
+    console.warn('Could not save assistant reply to DB:', dbErr);
+  }
 
-  // Update session timestamp
-  await supabase
-    .from('chat_sessions')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('id', sessionId);
+  // Update session timestamp — non-fatal
+  try {
+    await supabase
+      .from('chat_sessions')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', sessionId);
+  } catch (dbErr) {
+    console.warn('Could not update session timestamp:', dbErr);
+  }
 
   console.log(`✅ Response from: ${provider}`);
   return { reply, provider };
