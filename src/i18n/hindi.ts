@@ -347,3 +347,6 @@ export const hi = {
     startOver: 'पुनः प्रारंभ करें'
   }
 };
+
+export type TranslationKeys = typeof hi;
+
