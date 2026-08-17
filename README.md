@@ -1,34 +1,91 @@
-# React + TypeScript + Vite
+# 🌱 Krishimithram
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**The AI Companion for Kerala's Farmers.** 
 
-Currently, two official plugins are available:
+Krishimithram is a modern, mobile-responsive web application designed to empower farmers with accessible, data-driven agricultural advice. Built with an emphasis on accessibility, the platform features a native multilingual voice assistant, an AI-powered crop scanner, real-time market insights, and localized weather metrics to help farmers improve their yield without needing to type a single word.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## ✨ Features
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+*   🎙️ **Multilingual Voice Assistant (`KrishiAvatarAssistant`):** A collapsible, floating UI widget that listens and speaks in Malayalam, Hindi, and English. Powered by the native Web Speech API and routed through ultra-low-latency LLMs for seamless interactions.
+*   🧠 **Intelligent Agricultural Advice:** Integrated with the **Google Gemini API** and failover routes, providing farmers with real-time, context-aware farming solutions strictly in their chosen language.
+*   📷 **AI Crop Scanner:** Utilizes computer vision APIs (Pl@ntNet/Gemini). Users can snap a photo of their crops to instantly identify the plant, detect visible diseases or pests, and receive organic remedy suggestions.
+*   📊 **Live Market & Weather Data:** Geo-targeted dashboards that pull real-time Mandi market crop prices and precise Open-Meteo climate forecasts based on the user's location.
+*   📱 **Fully Mobile-Responsive:** A meticulously audited CSS layout ensuring a perfect, app-like experience on mobile devices with zero horizontal scrolling and touch-friendly interface elements.
+*   🔐 **Secure User Data:** Backed by a cloud PostgreSQL database for seamless user authentication and personalized farming data storage.
 
-Note: This will impact Vite dev & build performances.
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+### Core Frontend & Deployment
+*   **Frontend:** React (JavaScript/JSX)
+*   **Styling:** Native CSS (Flexbox, CSS Animations, Media Queries)
+*   **Hosting/Deployment:** Vercel
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+### Project Infrastructure & External APIs
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+**Backend Infrastructure**
+*   **Supabase Platform:** Cloud PostgreSQL database, user authentication, and secure data storage.
+
+**Artificial Intelligence & Voice Engine**
+*   **Google Gemini API:** Core intelligence driving native multilingual speech & query resolution.
+*   **Groq API & OpenAI / OpenRouter:** Ultra-low-latency LLM inference and failover API routing.
+*   **Native Web Speech API:** HTML5 engine (`SpeechRecognition` & `SpeechSynthesis`) for local voice handling.
+
+**Agricultural Intelligence & Computer Vision**
+*   **Mandi Market API:** Real-time fetching of local crop market prices.
+*   **Pl@ntNet API:** Computer vision for crop disease detection and plant health diagnostics.
+
+**Climate & Geolocation**
+*   **Open-Meteo API:** Precise weather metrics and forecast data for farm management.
+*   **IPStack & Location APIs:** Geo-targeting user location to provide regional language, weather, and market data.
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to set up the project locally.
+
+### Prerequisites
+*   Node.js installed on your machine.
+*   Active API keys for Gemini, Supabase, Groq/OpenRouter, and the external data APIs.
+
+### Installation
+1. **Clone the repository:**
+   ```bash
+   git clone "https://github.com/thusharks1234-byte/krishimithramthush.git"
+   cd krishimithram
+  Install dependencies:
+
+Bash
+npm install
+
+2.**Set up Environment Variables:**
+Create a .env file in the root of your project and add your Gemini API key:
+
+  Code snippet
+VITE_GEMINI_API_KEY=your_actual_api_key_here
+(Note: If using Create React App instead of Vite, name the variable REACT_APP_GEMINI_API_KEY)
+
+3.**Run the development server:**
+
+Bash
+npm run dev
+Open http://localhost:5173 (or the port specified in your terminal) to view it in your browser.
+
+📱 Mobile Optimization
+This application is built with a "Mobile-First" philosophy. To test the mobile view locally:
+
+Open Developer Tools in your browser (F12 or Ctrl+Shift+I).
+
+Toggle the Device Toolbar (Ctrl+Shift+M).
+
+Select a mobile device to ensure the Floating Action Button and layout render perfectly.
+
+👨‍💻 Developer
+Developed by Thushar K S.
+
+📄 License
+This project is for educational and developmental purposes.
