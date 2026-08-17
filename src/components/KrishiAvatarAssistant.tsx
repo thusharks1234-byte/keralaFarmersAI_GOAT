@@ -590,9 +590,13 @@ const KrishiAvatarAssistant: React.FC = () => {
     setIsThinking(true);
     setErrorMsg('');
 
-    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-    const endpoint =
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+    const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+
+    if (!API_KEY) {
+      setIsThinking(false);
+      setErrorMsg('API Key is missing. Please configure VITE_GROQ_API_KEY.');
+      return;
+    }
 
     const systemPrompt =
       `You are Krishimithram, a helpful voice assistant for farmers in Kerala. ` +
@@ -601,23 +605,34 @@ const KrishiAvatarAssistant: React.FC = () => {
       `Language locale: ${selectedLang}. Question: ${command}`;
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: command }
+          ],
+          temperature: 0.7,
+          max_tokens: 300,
+        }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      const raw  = data.choices?.[0]?.message?.content ?? '';
       const clean = sanitizeForSpeech(raw);
 
       setAiReply(clean);
       speak(clean, selectedLang);
 
     } catch (err) {
-      console.error('[KrishiAI] Gemini error:', err);
+      console.error('[KrishiAI] AI request error:', err);
       stopAudio();
       setErrorMsg('Could not connect. Please check your internet and try again.');
     } finally {
