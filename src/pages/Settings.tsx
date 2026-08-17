@@ -63,12 +63,6 @@ export default function Settings() {
             >
               മലയാളം (Malayalam)
             </button>
-            <button
-              className={`btn ${language === 'hi' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setLanguage('hi')}
-            >
-              हिंदी (Hindi)
-            </button>
           </div>
         </div>
 

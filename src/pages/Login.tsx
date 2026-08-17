@@ -77,7 +77,6 @@ export default function Login() {
           <div className="lang-switch lang-switch-dark">
             <button className={`lang-btn${language === 'en' ? ' active' : ''}`} onClick={() => setLanguage('en')}>English</button>
             <button className={`lang-btn${language === 'ml' ? ' active' : ''}`} onClick={() => setLanguage('ml')}>മലയാളം</button>
-            <button className={`lang-btn${language === 'hi' ? ' active' : ''}`} onClick={() => setLanguage('hi')}>हिंदी</button>
           </div>
         </div>
 

@@ -263,7 +263,6 @@ export default function FarmProfile() {
                 <select className="form-input form-select" value={profile.preferred_language || 'en'} onChange={e => setProfile({...profile, preferred_language: e.target.value as Language})}>
                   <option value="en">English</option>
                   <option value="ml">മലയാളം</option>
-                  <option value="hi">हिंदी</option>
                 </select>
               </div>
             </div>

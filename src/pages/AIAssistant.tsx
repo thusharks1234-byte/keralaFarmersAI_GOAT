@@ -20,8 +20,57 @@ export default function AIAssistant() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [farmContext, setFarmContext] = useState<string>('');
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Initialize Speech Recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+
+      recognitionRef.current.onstart = () => setIsListening(true);
+      
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput((prev) => prev + (prev ? ' ' : '') + transcript);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => setIsListening(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = language === 'ml' ? 'ml-IN' : 'en-IN';
+    }
+  }, [language]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert(language === 'ml' ? 'നിങ്ങളുടെ ബ്രൗസറിൽ വോയ്‌സ് ഇൻപുട്ട് ലഭ്യമല്ല.' : 'Voice input is not supported in your browser.');
+      return;
+    }
+    
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      try {
+        recognitionRef.current.start();
+      } catch (e) {
+        console.error('Error starting recognition:', e);
+      }
+    }
+  };
 
   useEffect(() => {
     loadSessions();
@@ -351,13 +400,14 @@ export default function AIAssistant() {
           {/* Composer */}
           <div className="chat-composer">
             <button
-              className="btn btn-ghost btn-icon"
-              aria-label="Voice input (coming soon)"
-              title={t.ai.voiceComingSoon}
-              disabled
-              style={{ opacity: 0.4 }}
+              className={`btn btn-icon ${isListening ? 'btn-primary' : 'btn-ghost'}`}
+              aria-label={isListening ? "Stop listening" : "Start voice input"}
+              title={isListening ? "Stop listening" : "Start voice input"}
+              onClick={toggleListening}
+              style={{ opacity: 1 }}
+              type="button"
             >
-              <Mic size={20} />
+              <Mic size={20} className={isListening ? 'pulse-animation' : ''} />
             </button>
 
             <textarea

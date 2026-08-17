@@ -3,7 +3,7 @@ export interface Profile {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
-  preferred_language: 'en' | 'ml' | 'hi';
+  preferred_language: 'en' | 'ml';
   created_at: string;
   updated_at: string;
 }
@@ -127,7 +127,7 @@ export interface SupportRequest {
   created_at?: string;
 }
 
-export type Language = 'en' | 'ml' | 'hi';
+export type Language = 'en' | 'ml';
 
 export interface WeatherData {
   current: {
