@@ -1,627 +1,914 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   KrishiAvatarAssistant
-   A floating Malayalam voice-assistant overlay.
-   ─ Strictly isolated: no shared CSS classes, no layout mutations.
-   ─ All styles live inside this file (inline or injected <style> tag).
+   KrishiAvatarAssistant  –  v3.0  (Production-Ready)
+   ─ Bulletproof Malayalam TTS / STT with intelligent voice fallback
+   ─ Draggable FAB with boundary collision and tap-vs-drag disambiguation
+   ─ 7-second silence timeout + full STT error recovery
+   ─ Gemini response sanitization for clean voice output
+   ─ Subtitle overlay fallback when no native voice engine is available
+   ─ Fully isolated: zero shared CSS, zero layout mutations
    ───────────────────────────────────────────────────────────────────────────── */
 
-// ── Inject keyframe animations once into the document head ──────────────────
-const STYLE_ID = 'krishi-avatar-styles';
+// ─────────────────────────────────────────────────────────────────────────────
+// STYLES  –  injected once into <head> as a scoped <style> tag
+// ─────────────────────────────────────────────────────────────────────────────
+const STYLE_ID = 'krishi-avatar-v3-styles';
 
 function injectStyles() {
   if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `
+  const el = document.createElement('style');
+  el.id = STYLE_ID;
+  el.textContent = `
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600&display=swap');
 
-    /* Outer glow pulse when speaking */
-    @keyframes krishi-glow-pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.7), 0 8px 32px rgba(0,0,0,0.35); }
-      70%  { box-shadow: 0 0 0 18px rgba(34,197,94,0), 0 8px 32px rgba(0,0,0,0.35); }
-      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0), 0 8px 32px rgba(0,0,0,0.35); }
+    @keyframes ka-glow {
+      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.75), 0 8px 32px rgba(0,0,0,.3); }
+      70%  { box-shadow: 0 0 0 20px rgba(34,197,94,0), 0 8px 32px rgba(0,0,0,.3); }
+      100% { box-shadow: 0 0 0 0  rgba(34,197,94,0), 0 8px 32px rgba(0,0,0,.3); }
     }
-
-    /* Avatar idle gentle float */
-    @keyframes krishi-float {
-      0%, 100% { transform: translateY(0px); }
-      50%       { transform: translateY(-6px); }
+    @keyframes ka-float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-5px); }
     }
-
-    /* Listening ring ripple */
-    @keyframes krishi-ripple {
-      0%   { transform: scale(1);   opacity: 0.8; }
-      100% { transform: scale(1.9); opacity: 0;   }
+    @keyframes ka-ripple {
+      0%   { transform: scale(1);   opacity: .75; }
+      100% { transform: scale(2.1); opacity: 0; }
     }
-
-    /* Head nod while speaking */
-    @keyframes krishi-nod {
-      0%, 100% { transform: rotate(0deg);   }
-      25%       { transform: rotate(3deg);   }
-      75%       { transform: rotate(-3deg);  }
+    @keyframes ka-nod {
+      0%,100% { transform: rotate(0deg); }
+      30%      { transform: rotate(4deg); }
+      70%      { transform: rotate(-4deg); }
     }
-
-    /* Transcript fade-in slide */
-    @keyframes krishi-slide-up {
-      from { opacity: 0; transform: translateY(10px); }
+    @keyframes ka-slide-up {
+      from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
-    /* Button press ripple */
-    @keyframes krishi-btn-ripple {
-      0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
-      70%  { box-shadow: 0 0 0 14px rgba(239,68,68,0); }
-      100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    @keyframes ka-listening-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(239,68,68,.55); }
+      70%  { box-shadow: 0 0 0 16px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0  rgba(239,68,68,0); }
+    }
+    @keyframes ka-bounce-idle {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.07); }
+    }
+    @keyframes ka-pulse-dot {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .2; }
     }
 
-    /* Bounce for talk button */
-    @keyframes krishi-bounce {
-      0%, 100% { transform: scale(1); }
-      50%       { transform: scale(1.06); }
-    }
-
-    /* Mouth open/close while speaking */
-    @keyframes krishi-mouth-open {
-      0%, 100% { ry: 1px; }
-      50%       { ry: 3px; }
-    }
-
-        .krishi-widget-card {
-      font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif;
+    /* ── Panel ── */
+    .ka-panel {
+      font-family: 'Noto Sans Malayalam', 'Manjari', system-ui, sans-serif;
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 99999;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(34,197,94,0.25);
-      border-radius: 20px;
-      padding: 30px 20px 20px;
-      width: calc(100vw - 40px);
-      max-width: 300px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      bottom: 100px;
+      right: 20px;
+      z-index: 2147483640;
+      width: min(300px, calc(100vw - 40px));
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(34,197,94,.22);
+      border-radius: 22px;
+      padding: 28px 18px 20px;
+      box-shadow: 0 16px 56px rgba(0,0,0,.18), 0 4px 16px rgba(22,163,74,.12);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       opacity: 0;
-      transform: translateY(20px) scale(0.95);
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: scale(.93) translateY(12px);
       pointer-events: none;
+      transition: opacity .28s ease, transform .28s ease;
+      will-change: opacity, transform;
     }
-
-    .krishi-widget-card.open {
+    .ka-panel.ka-open {
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: scale(1) translateY(0);
       pointer-events: auto;
     }
-
-    .krishi-close-btn {
+    .ka-close {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      background: none;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      color: #666;
-      width: 28px;
-      height: 28px;
+      top: 10px; right: 10px;
+      width: 28px; height: 28px;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s;
-      outline: none;
+      border: none; background: none;
+      font-size: 15px; cursor: pointer;
+      color: #888;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .18s, color .18s;
     }
-    .krishi-close-btn:hover {
-      background: rgba(0,0,0,0.05);
-      color: #333;
-    }
+    .ka-close:hover { background: rgba(0,0,0,.06); color: #333; }
 
-    .krishi-fab {
+    /* ── FAB ── */
+    .ka-fab {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 99999;
-      width: 60px;
-      height: 60px;
+      z-index: 2147483641;
+      width: 58px; height: 58px;
       border-radius: 50%;
+      border: none; outline: none;
       background: linear-gradient(135deg, #16a34a, #15803d);
-      box-shadow: 0 4px 14px rgba(22,163,74,0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: transform 0.25s, box-shadow 0.25s, opacity 0.3s, transform 0.3s;
-      border: none;
-      outline: none;
+      box-shadow: 0 4px 18px rgba(22,163,74,.5);
+      cursor: grab;
+      display: flex; align-items: center; justify-content: center;
+      transition: box-shadow .22s, opacity .25s, transform .25s;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .krishi-fab:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(22,163,74,0.55);
-    }
-    .krishi-fab.hidden {
+    .ka-fab:active { cursor: grabbing; }
+    .ka-fab.ka-fab-hidden {
       opacity: 0;
-      transform: scale(0.5);
+      transform: scale(.45);
       pointer-events: none;
     }
-
-    .krishi-transcript {
-      background: rgba(255,255,255,0.97);
-      border: 1px solid rgba(34,197,94,0.25);
-      border-radius: 16px;
-      padding: 10px 14px;
-      font-size: 12px;
-      max-width: 220px;
-      color: #1a2e1a;
-      line-height: 1.6;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-      animation: krishi-slide-up 0.3s ease forwards;
+    .ka-fab:not(.ka-fab-hidden):hover {
+      box-shadow: 0 6px 24px rgba(22,163,74,.65);
     }
 
-    .krishi-transcript strong {
-      color: #15803d;
-      display: block;
-      margin-bottom: 2px;
-      font-size: 11px;
-      letter-spacing: 0.3px;
-    }
-
-    .krishi-avatar-wrapper {
+    /* ── Avatar ── */
+    .ka-avatar-wrap {
       position: relative;
       cursor: pointer;
       user-select: none;
+      -webkit-user-select: none;
     }
-
-    .krishi-ripple {
-      position: absolute;
-      inset: -8px;
-      border-radius: 50%;
-      border: 2px solid rgba(239,68,68,0.6);
-      animation: krishi-ripple 1.1s ease-out infinite;
-    }
-
-    .krishi-ripple-2 {
-      animation-delay: 0.55s;
-    }
-
-    .krishi-avatar-bg {
-      width: 88px;
-      height: 88px;
+    .ka-avatar-circle {
+      width: 86px; height: 86px;
       border-radius: 50%;
       background: linear-gradient(145deg, #16a34a, #166534);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: visible;
-      transition: transform 0.2s ease;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: visible;
+      transition: transform .2s;
     }
-
-    .krishi-avatar-bg:hover {
-      transform: scale(1.05);
-    }
-
-    .krishi-avatar-bg.speaking {
-      animation: krishi-glow-pulse 1.2s ease-in-out infinite;
-    }
-
-    .krishi-avatar-bg.idle {
-      animation: krishi-float 4s ease-in-out infinite;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
-
-    .krishi-svg-head.speaking {
-      animation: krishi-nod 0.7s ease-in-out infinite;
-      transform-origin: center 18px;
-    }
-
-    .krishi-mouth-ellipse.speaking {
-      animation: krishi-mouth-open 0.35s ease-in-out infinite alternate;
-    }
-
-    .krishi-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.85);
-      letter-spacing: 0.5px;
-      margin-top: 2px;
-      text-align: center;
-      background: rgba(0,0,0,0.3);
-      border-radius: 8px;
-      padding: 1px 7px;
+    .ka-avatar-circle:hover { transform: scale(1.04); }
+    .ka-avatar-circle.ka-idle   { animation: ka-float 3.6s ease-in-out infinite; box-shadow: 0 8px 28px rgba(0,0,0,.28); }
+    .ka-avatar-circle.ka-busy   { animation: ka-glow 1.15s ease-in-out infinite; }
+    .ka-svg-head.ka-speaking    { animation: ka-nod .72s ease-in-out infinite; transform-origin: center 18px; }
+    .ka-ripple {
       position: absolute;
-      bottom: -22px;
-      white-space: nowrap;
-    }
-
-    .krishi-mic-btn {
-      pointer-events: auto;
-      border: none;
-      outline: none;
-      padding: 10px 18px;
-      border-radius: 24px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: background 0.25s, transform 0.15s, box-shadow 0.25s;
-      font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif;
-      letter-spacing: 0.2px;
-      white-space: nowrap;
-    }
-
-    .krishi-mic-btn.idle {
-      background: linear-gradient(135deg, #16a34a, #15803d);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(22,163,74,0.45);
-      animation: krishi-bounce 2.5s ease-in-out infinite;
-    }
-
-    .krishi-mic-btn.idle:hover {
-      background: linear-gradient(135deg, #15803d, #14532d);
-      transform: scale(1.04);
-      box-shadow: 0 6px 20px rgba(22,163,74,0.55);
-    }
-
-    .krishi-mic-btn.listening {
-      background: linear-gradient(135deg, #dc2626, #b91c1c);
-      color: #fff;
-      animation: krishi-btn-ripple 1s ease-out infinite;
-    }
-
-    .krishi-badge {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      width: 18px;
-      height: 18px;
-      background: #f59e0b;
+      inset: -10px;
       border-radius: 50%;
+      border: 2px solid rgba(239,68,68,.55);
+      animation: ka-ripple 1.1s ease-out infinite;
+    }
+    .ka-ripple-2 { animation-delay: .55s; }
+    .ka-badge {
+      position: absolute;
+      top: -3px; right: -3px;
+      width: 18px; height: 18px;
+      background: #f59e0b;
       border: 2px solid #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
       font-size: 9px;
     }
-
-    /* ── Mobile: reposition above bottom nav, scale down ── */
-    @media (max-width: 1023px) {
-      .krishi-widget-card, .krishi-fab {
-        bottom: 90px;
-        right: 16px;
-      }
-
-      .krishi-avatar-bg {
-        width: 72px;
-        height: 72px;
-      }
-
-      .krishi-mic-btn {
-        font-size: 12px;
-        padding: 9px 14px;
-      }
-
-      .krishi-transcript {
-        max-width: 180px;
-        font-size: 11px;
-      }
+    .ka-status-lbl {
+      position: absolute;
+      bottom: -24px;
+      font-size: 10px; font-weight: 600;
+      color: rgba(255,255,255,.88);
+      background: rgba(0,0,0,.3);
+      border-radius: 8px;
+      padding: 1px 8px;
+      white-space: nowrap;
+      letter-spacing: .3px;
     }
 
+    /* ── Transcript / subtitle bubble ── */
+    .ka-bubble {
+      background: #f0fdf4;
+      border: 1px solid rgba(34,197,94,.3);
+      border-radius: 14px;
+      padding: 10px 13px;
+      font-size: 12.5px;
+      width: 100%;
+      color: #14532d;
+      line-height: 1.6;
+      animation: ka-slide-up .28s ease forwards;
+    }
+    .ka-bubble strong {
+      display: block;
+      color: #15803d;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .35px;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ── Subtitle fallback box ── */
+    .ka-subtitle {
+      background: linear-gradient(135deg, rgba(22,163,74,.07), rgba(22,163,74,.03));
+      border: 1px solid rgba(34,197,94,.25);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+      width: 100%;
+      color: #1a3a1a;
+      line-height: 1.7;
+      animation: ka-slide-up .28s ease forwards;
+      font-family: 'Noto Sans Malayalam', system-ui, sans-serif;
+    }
+    .ka-subtitle strong {
+      display: block;
+      color: #16a34a;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .ka-text-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(22,163,74,.08);
+      color: #15803d;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 20px;
+      padding: 4px 10px;
+      margin-bottom: 6px;
+      letter-spacing: .2px;
+      border: 1px solid rgba(22,163,74,.15);
+    }
+
+    /* ── Language buttons ── */
+    .ka-lang-row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+    .ka-lang-btn {
+      padding: 9px 14px;
+      min-height: 40px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(34,197,94,.3);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(255,255,255,.95);
+      color: #14532d;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      transition: all .2s;
+      font-family: inherit;
+    }
+    .ka-lang-btn.ka-active {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(22,163,74,.35);
+    }
+    .ka-lang-btn:hover:not(.ka-active) {
+      background: #f0fdf4;
+      border-color: rgba(34,197,94,.6);
+    }
+
+    /* ── Mic button ── */
+    .ka-mic-btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: 7px;
+      padding: 11px 22px;
+      min-height: 44px;
+      border-radius: 24px;
+      border: none; outline: none;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: .2px;
+      transition: all .22s;
+      white-space: nowrap;
+      width: 100%;
+    }
+    .ka-mic-btn.ka-idle-btn {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(22,163,74,.42);
+      animation: ka-bounce-idle 2.8s ease-in-out infinite;
+    }
+    .ka-mic-btn.ka-idle-btn:hover {
+      background: linear-gradient(135deg, #15803d, #14532d);
+      box-shadow: 0 6px 22px rgba(22,163,74,.56);
+    }
+    .ka-mic-btn.ka-listening-btn {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #fff;
+      animation: ka-listening-ring 1s ease-out infinite;
+    }
+    .ka-mic-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      animation: none;
+    }
+
+    /* ── Thinking dots ── */
+    .ka-dots span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #16a34a;
+      margin: 0 2px;
+      animation: ka-pulse-dot .9s ease-in-out infinite;
+    }
+    .ka-dots span:nth-child(2) { animation-delay: .2s; }
+    .ka-dots span:nth-child(3) { animation-delay: .4s; }
+
+    /* ── Error toast inside panel ── */
+    .ka-error {
+      width: 100%;
+      background: rgba(220,38,38,.06);
+      border: 1px solid rgba(220,38,38,.22);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #b91c1c;
+      display: flex; align-items: center; gap: 6px;
+      animation: ka-slide-up .25s ease;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1023px) {
+      .ka-panel   { bottom: 88px; right: 14px; }
+      .ka-avatar-circle { width: 72px; height: 72px; }
+      .ka-mic-btn { font-size: 12px; padding: 10px 16px; }
+    }
     @media (max-width: 480px) {
-      .krishi-widget-card, .krishi-fab {
-        bottom: 84px;
-        right: 12px;
-        gap: 7px;
-      }
-
-      .krishi-avatar-bg {
-        width: 64px;
-        height: 64px;
-      }
-
-      .krishi-transcript {
-        max-width: 160px;
-      }
+      .ka-panel   { bottom: 82px; right: 10px; width: min(290px, calc(100vw - 20px)); }
+      .ka-avatar-circle { width: 64px; height: 64px; }
+      .ka-bubble, .ka-subtitle { font-size: 12px; }
     }
   `;
-  document.head.appendChild(style);
+  document.head.appendChild(el);
 }
 
-// ── SVG Avatar: a clean illustrated farmer face ───────────────────────────
-interface AvatarSVGProps {
-  speaking: boolean;
-}
-
-const AvatarSVG: React.FC<AvatarSVGProps> = ({ speaking }) => (
+// ─────────────────────────────────────────────────────────────────────────────
+// AVATAR SVG
+// ─────────────────────────────────────────────────────────────────────────────
+const AvatarSVG: React.FC<{ speaking: boolean }> = ({ speaking }) => (
   <svg
-    className={`krishi-svg-head ${speaking ? 'speaking' : ''}`}
-    width="62"
-    height="62"
-    viewBox="0 0 34 34"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    className={`ka-svg-head${speaking ? ' ka-speaking' : ''}`}
+    width="60" height="60" viewBox="0 0 34 34"
+    fill="none" xmlns="http://www.w3.org/2000/svg"
   >
-    {/* Neck */}
     <rect x="14" y="23" width="6" height="4" rx="1.5" fill="#f5c49a" />
-
-    {/* Shirt / body hint */}
-    <ellipse cx="17" cy="31" rx="9" ry="5" fill="#ffffff" opacity="0.25" />
-
-    {/* Head */}
+    <ellipse cx="17" cy="31" rx="9" ry="5" fill="#fff" opacity=".22" />
     <ellipse cx="17" cy="14" rx="9" ry="10" fill="#f5c49a" />
-
-    {/* Farmer hat brim */}
     <ellipse cx="17" cy="5.5" rx="10.5" ry="2.2" fill="#92400e" />
-    {/* Hat top */}
     <rect x="11" y="2" width="12" height="5" rx="2" fill="#b45309" />
-    {/* Hat band */}
     <rect x="11" y="5.5" width="12" height="1.2" fill="#78350f" />
-
-    {/* Eyes */}
     <ellipse cx="13" cy="14" rx="1.4" ry="1.6" fill="#1a1a2e" />
     <ellipse cx="21" cy="14" rx="1.4" ry="1.6" fill="#1a1a2e" />
-    {/* Eye shine */}
-    <circle cx="13.6" cy="13.3" r="0.45" fill="white" />
-    <circle cx="21.6" cy="13.3" r="0.45" fill="white" />
-
-    {/* Eyebrows */}
-    <path d="M11.5 12 Q13 11.2 14.5 12" stroke="#78350f" strokeWidth="0.8" strokeLinecap="round" fill="none" />
-    <path d="M19.5 12 Q21 11.2 22.5 12" stroke="#78350f" strokeWidth="0.8" strokeLinecap="round" fill="none" />
-
-    {/* Nose */}
-    <ellipse cx="17" cy="17" rx="1" ry="0.7" fill="#e8a87c" />
-
-    {/* Mouth - speaking open state toggled via cx/ry */}
+    <circle cx="13.6" cy="13.3" r=".45" fill="white" />
+    <circle cx="21.6" cy="13.3" r=".45" fill="white" />
+    <path d="M11.5 12 Q13 11.2 14.5 12" stroke="#78350f" strokeWidth=".8" strokeLinecap="round" fill="none" />
+    <path d="M19.5 12 Q21 11.2 22.5 12" stroke="#78350f" strokeWidth=".8" strokeLinecap="round" fill="none" />
+    <ellipse cx="17" cy="17" rx="1" ry=".7" fill="#e8a87c" />
     <ellipse
-      className={`krishi-mouth-ellipse ${speaking ? 'speaking' : ''}`}
-      cx="17"
-      cy="20"
-      rx="3.5"
-      ry={speaking ? 2.2 : 1}
+      cx="17" cy="20"
+      rx="3.5" ry={speaking ? 2.3 : 1}
       fill={speaking ? '#c2704f' : 'none'}
-      stroke="#c2704f"
-      strokeWidth="1"
+      stroke="#c2704f" strokeWidth="1"
     />
-    {/* Teeth hint when speaking */}
-    {speaking && (
-      <ellipse cx="17" cy="19.5" rx="2.5" ry="0.9" fill="white" opacity="0.85" />
-    )}
-
-    {/* Cheeks */}
-    <ellipse cx="10.5" cy="17" rx="2" ry="1.2" fill="#f4a261" opacity="0.35" />
-    <ellipse cx="23.5" cy="17" rx="2" ry="1.2" fill="#f4a261" opacity="0.35" />
-
-    {/* Ears */}
-    <ellipse cx="8" cy="14.5" rx="1.2" ry="1.8" fill="#f5c49a" />
+    {speaking && <ellipse cx="17" cy="19.5" rx="2.4" ry=".85" fill="white" opacity=".82" />}
+    <ellipse cx="10.5" cy="17" rx="2" ry="1.2" fill="#f4a261" opacity=".33" />
+    <ellipse cx="23.5" cy="17" rx="2" ry="1.2" fill="#f4a261" opacity=".33" />
+    <ellipse cx="8"  cy="14.5" rx="1.2" ry="1.8" fill="#f5c49a" />
     <ellipse cx="26" cy="14.5" rx="1.2" ry="1.8" fill="#f5c49a" />
   </svg>
 );
 
-// ── Main Component ────────────────────────────────────────────────────────────
-const KrishiAvatarAssistant: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isThinking, setIsThinking] = useState(false);
-  const [selectedLang, setSelectedLang] = useState('ml-IN');
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+const FAB_SIZE = 58;     // px — matches .ka-fab width/height
+const DRAG_THRESHOLD = 5; // px — movement below this = tap, above = drag
 
-  useEffect(() => {
-    injectStyles();
+const KrishiAvatarAssistant: React.FC = () => {
+
+  // ── UI State ──────────────────────────────────────────────────────────────
+  const [isOpen,     setIsOpen]     = useState(false);
+  const [transcript, setTranscript] = useState('');         // what user said
+  const [aiReply,    setAiReply]    = useState('');         // cleaned AI reply
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking,  setIsSpeaking]  = useState(false);
+  const [isThinking,  setIsThinking]  = useState(false);
+  const [errorMsg,    setErrorMsg]    = useState('');
+  const [selectedLang, setSelectedLang] = useState<'ml-IN'|'en-IN'|'hi-IN'>('ml-IN');
+  const [hasNativeVoice, setHasNativeVoice] = useState(true); // subtitle fallback flag
+
+  // ── TTS voices list ───────────────────────────────────────────────────────
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // ── Drag State ────────────────────────────────────────────────────────────
+  const [fabPos, setFabPos] = useState({
+    x: window.innerWidth  - FAB_SIZE - 20,
+    y: window.innerHeight - FAB_SIZE - 20,
+  });
+  const dragState = useRef({
+    dragging: false,
+    startX: 0, startY: 0,
+    originX: 0, originY: 0,
+    moved: false,
+  });
+
+  // ── Refs ──────────────────────────────────────────────────────────────────
+  const silenceTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoCollapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const fallbackAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const stopAudio = useCallback(() => {
+    window.speechSynthesis.cancel();
+    if (fallbackAudioRef.current) {
+      fallbackAudioRef.current.pause();
+      fallbackAudioRef.current.currentTime = 0;
+    }
+    setIsSpeaking(false);
+    clearTimeout(autoCollapseTimer.current!);
   }, []);
 
-  // 3. Speak back dynamically
-  const speak = (replyText: string, langCode: string = 'en-IN') => {
-    const synth = window.speechSynthesis;
-    synth.cancel();
+  // ─────────────────────────────────────────────────────────────────────────
+  // INIT: styles + voice loading
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    injectStyles();
 
-    const utterance = new SpeechSynthesisUtterance(replyText);
-    utterance.lang = langCode;
-    utterance.rate = 0.95;
-    utterance.pitch = 1.05;
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length > 0) setVoices(v);
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => { setIsSpeaking(false); setIsOpen(false); };
-    utterance.onerror = () => { setIsSpeaking(false); setIsOpen(false); };
+    // Keep FAB on-screen on window resize
+    const onResize = () => {
+      setFabPos(prev => ({
+        x: Math.min(prev.x, window.innerWidth  - FAB_SIZE - 10),
+        y: Math.min(prev.y, window.innerHeight - FAB_SIZE - 10),
+      }));
+    };
+    window.addEventListener('resize', onResize);
 
-    synth.speak(utterance);
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      window.removeEventListener('resize', onResize);
+      clearTimeout(silenceTimer.current!);
+      clearTimeout(autoCollapseTimer.current!);
+    };
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // VOICE SELECTION — best-match per locale
+  // ─────────────────────────────────────────────────────────────────────────
+  const selectBestVoice = useCallback((lang: string): SpeechSynthesisVoice | null => {
+    if (voices.length === 0) return null;
+
+    if (lang === 'ml-IN') {
+      return (
+        voices.find(v => v.lang === 'ml-IN') ||
+        voices.find(v => v.lang.startsWith('ml')) ||
+        voices.find(v => v.name.toLowerCase().includes('malayalam')) ||
+        null
+      );
+    }
+    if (lang === 'hi-IN') {
+      return (
+        voices.find(v => v.lang === 'hi-IN') ||
+        voices.find(v => v.lang.startsWith('hi')) ||
+        voices.find(v => v.name.toLowerCase().includes('hindi')) ||
+        null
+      );
+    }
+    // en-IN
+    return (
+      voices.find(v => v.lang === 'en-IN') ||
+      voices.find(v => v.lang.startsWith('en')) ||
+      null
+    );
+  }, [voices]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SANITIZE GEMINI RESPONSE for speech output
+  // ─────────────────────────────────────────────────────────────────────────
+  const sanitizeForSpeech = (text: string): string => {
+    return text
+      // Remove markdown bold/italic/headers/code
+      .replace(/[*#_~`]/g, '')
+      // Remove URLs
+      .replace(/https?:\/\/\S+/g, '')
+      // Remove markdown links [text](url)
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Remove list markers
+      .replace(/^\s*[-•>+]\s/gm, '')
+      // Remove emoji unicode ranges
+      .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')
+      .replace(/[\u{2600}-\u{27BF}]/gu, '')
+      // Remove special symbols: | = { } [ ] ( ) \ /
+      .replace(/[|={}[\]()\\/]/g, '')
+      // Collapse multiple spaces/newlines
+      .replace(/\s{2,}/g, ' ')
+      .trim();
   };
 
-  // 2. Process commands using Gemini API
-  const processCommand = async (command: string) => {
+  // ─────────────────────────────────────────────────────────────────────────
+  // TTS — speak with voice priority, subtitle fallback, auto-collapse
+  // ─────────────────────────────────────────────────────────────────────────
+  const speak = useCallback((text: string, lang: string) => {
+    const synth = window.speechSynthesis;
+    // Queue reset — clears any hung stream (Chrome bug)
+    synth.cancel();
+    if (fallbackAudioRef.current) {
+      fallbackAudioRef.current.pause();
+      fallbackAudioRef.current.currentTime = 0;
+    }
+
+    const voice = selectBestVoice(lang);
+    if (voice) {
+      setHasNativeVoice(true);
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang  = lang;
+      utterance.rate  = 0.88;   // natural regional inflection
+      utterance.pitch = 1.0;
+      utterance.voice = voice;
+
+      utterance.onstart = () => setIsSpeaking(true);
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        // Auto-collapse panel 3 s after speech finishes
+        clearTimeout(autoCollapseTimer.current!);
+        autoCollapseTimer.current = setTimeout(() => setIsOpen(false), 3000);
+      };
+
+      utterance.onerror = (e) => {
+        // Synthesis errors are non-fatal — subtitle is already showing
+        console.warn('[KrishiAI] TTS error:', e.error);
+        setIsSpeaking(false);
+      };
+
+      synth.speak(utterance);
+    } else {
+      // No native voice engine found — Cloud TTS Fallback + Subtitle mode
+      setHasNativeVoice(false);
+      
+      const langPrefix = lang.split('-')[0]; // extracts 'ml' from 'ml-IN'
+      // Google Translate free TTS endpoint
+      const audioUrl = "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=" + langPrefix + "&q=" + encodeURIComponent(text);
+      
+      const fallbackAudio = new Audio(audioUrl);
+      fallbackAudioRef.current = fallbackAudio;
+      
+      fallbackAudio.onplay = () => setIsSpeaking(true);
+      
+      fallbackAudio.onended = () => {
+        setIsSpeaking(false);
+        clearTimeout(autoCollapseTimer.current!);
+        autoCollapseTimer.current = setTimeout(() => setIsOpen(false), 3000);
+      };
+      
+      fallbackAudio.onerror = () => {
+        console.warn('[KrishiAI] Cloud TTS fallback error');
+        setIsSpeaking(false);
+      };
+      
+      fallbackAudio.play().catch(err => {
+        console.warn('[KrishiAI] Audio play blocked:', err);
+        setIsSpeaking(false);
+      });
+    }
+  }, [selectBestVoice]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GEMINI API CALL
+  // ─────────────────────────────────────────────────────────────────────────
+  const processCommand = useCallback(async (command: string) => {
     setIsThinking(true);
+    setErrorMsg('');
+
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-    
-    const prompt = "You are Krishimithram, an agricultural AI assistant. The user is asking a farming question. You MUST reply briefly in 1 to 2 short sentences strictly in the language matching this locale code: " + selectedLang + ". Question: " + command;
+    const endpoint =
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+
+    const systemPrompt =
+      `You are Krishimithram, a helpful voice assistant for farmers in Kerala. ` +
+      `Answer in 1 to 2 short sentences using clear, plain text only. ` +
+      `Do NOT use markdown formatting, lists, asterisks, or emojis. ` +
+      `Language locale: ${selectedLang}. Question: ${command}`;
 
     try {
-      const response = await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] }),
       });
 
-      if (!response.ok) {
-        throw new Error('API Error');
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const data = await response.json();
-      const rawText = data.candidates[0].content.parts[0].text;
-      
-      speak(rawText, selectedLang);
-    } catch (error) {
-      console.error("Error processing command:", error);
-      // Cancel any pending speech and reset state cleanly
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      // Show user-friendly error in the transcript bubble
-      setTranscript('⚠️ Could not connect. Please check your internet and try again.');
+      const data = await res.json();
+      const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      const clean = sanitizeForSpeech(raw);
+
+      setAiReply(clean);
+      speak(clean, selectedLang);
+
+    } catch (err) {
+      console.error('[KrishiAI] Gemini error:', err);
+      stopAudio();
+      setErrorMsg('Could not connect. Please check your internet and try again.');
     } finally {
       setIsThinking(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLang, speak]);
 
-  // 1. Listen multilingually
-  const startListening = () => {
-    // Guard: do not allow new listen while thinking or already listening
+  // ─────────────────────────────────────────────────────────────────────────
+  // STT — Speech-to-Text with silence timeout + full error recovery
+  // ─────────────────────────────────────────────────────────────────────────
+  const stopListening = useCallback(() => {
+    clearTimeout(silenceTimer.current!);
+    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
+    setIsListening(false);
+  }, []);
+
+  const startListening = useCallback(() => {
     if (isListening || isThinking || isSpeaking) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // Cancel any ongoing speech before listening
+    stopAudio();
+    setErrorMsg('');
+    setAiReply('');
+    setTranscript('');
 
-    if (!SpeechRecognition) {
-      setTranscript('⚠️ Speech recognition is not supported by your browser.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let Rec: any;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Rec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!Rec) throw new Error('not supported');
+    } catch {
+      setErrorMsg('Speech recognition is not supported by your browser. Please use Chrome.');
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = selectedLang;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = (event: any) => {
-      setIsListening(false);
-      // Map common error codes to friendly messages
-      const messages: Record<string, string> = {
-        'not-allowed': '⚠️ Microphone access denied. Please allow mic permission.',
-        'no-speech': '⚠️ No speech detected. Please try again.',
-        'network': '⚠️ Network error. Please check your connection.',
-        'aborted': '',
-      };
-      const msg = messages[event.error] ?? `⚠️ Speech error: ${event.error}`;
-      if (msg) setTranscript(msg);
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (event: any) => {
-      const command = event.results[0][0].transcript;
-      setTranscript(command);
-      processCommand(command);
-    };
-
     try {
-      recognition.start();
-    } catch (err) {
-      console.error('Failed to start speech recognition:', err);
-      setIsListening(false);
-      setTranscript('⚠️ Could not start microphone. Please try again.');
-    }
-  };
+      const rec = new Rec();
+      recognitionRef.current = rec;
 
-  const handleAvatarClick = () => {
+      rec.lang = selectedLang;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.continuous = false;
+
+      rec.onstart = () => {
+        setIsListening(true);
+
+        // 7-second silence auto-stop
+        clearTimeout(silenceTimer.current!);
+        silenceTimer.current = setTimeout(() => {
+          rec.stop();
+          setIsListening(false);
+          setErrorMsg('No speech detected. Please try speaking again. 🎤');
+        }, 7000);
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rec.onresult = (event: any) => {
+        clearTimeout(silenceTimer.current!);
+        const text = event.results[0][0].transcript;
+        setTranscript(text);
+        processCommand(text);
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rec.onerror = (event: any) => {
+        clearTimeout(silenceTimer.current!);
+        setIsListening(false);
+
+        const friendlyErrors: Record<string, string> = {
+          'no-speech':       'No speech detected. Please try again. 🎤',
+          'audio-capture':   'Microphone not found. Please connect a microphone.',
+          'not-allowed':     'Microphone permission denied. Please allow mic access in browser settings.',
+          'network':         'Network error during speech recognition. Check your connection.',
+          'aborted':         '', // silent — user or timeout triggered it
+        };
+        const msg = friendlyErrors[event.error] ?? `Speech error: ${event.error}`;
+        if (msg) setErrorMsg(msg);
+      };
+
+      rec.onend = () => {
+        clearTimeout(silenceTimer.current!);
+        setIsListening(false);
+      };
+
+      rec.start();
+
+    } catch (err) {
+      console.error('[KrishiAI] STT init error:', err);
+      setIsListening(false);
+      setErrorMsg('Could not start the microphone. Please try again.');
+    }
+  }, [isListening, isThinking, isSpeaking, selectedLang, processCommand]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DRAGGABLE FAB
+  // ─────────────────────────────────────────────────────────────────────────
+  const clampX = (x: number) => Math.max(10, Math.min(window.innerWidth  - FAB_SIZE - 10, x));
+  const clampY = (y: number) => Math.max(10, Math.min(window.innerHeight - FAB_SIZE - 10, y));
+
+  const onDragMove = useCallback((clientX: number, clientY: number) => {
+    const ds = dragState.current;
+    const dx = clientX - ds.startX;
+    const dy = clientY - ds.startY;
+
+    if (!ds.moved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+      ds.moved = true;
+    }
+    if (ds.moved) {
+      setFabPos({ x: clampX(ds.originX + dx), y: clampY(ds.originY + dy) });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onDragEnd = useCallback(() => {
+    dragState.current.dragging = false;
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup',   handleMouseUp);
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend',  handleTouchEnd);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Non-reactive references to stable handlers (avoid stale closures)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleMouseMove = useCallback((e: MouseEvent)       => onDragMove(e.clientX, e.clientY), [onDragMove]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleTouchMove = useCallback((e: TouchEvent)       => { if (dragState.current.moved) e.preventDefault(); onDragMove(e.touches[0].clientX, e.touches[0].clientY); }, [onDragMove]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleMouseUp   = useCallback(()                    => onDragEnd(), [onDragEnd]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleTouchEnd  = useCallback(()                    => onDragEnd(), [onDragEnd]);
+
+  const onDragStart = useCallback((clientX: number, clientY: number) => {
+    dragState.current = {
+      dragging: true,
+      startX: clientX, startY: clientY,
+      originX: fabPos.x, originY: fabPos.y,
+      moved: false,
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup',   handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend',  handleTouchEnd);
+  }, [fabPos.x, fabPos.y, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  // Tap to toggle panel (only if not a drag)
+  const handleFabClick = useCallback(() => {
+    if (!dragState.current.moved) {
+      clearTimeout(autoCollapseTimer.current!);
+      setIsOpen(prev => !prev);
+    }
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AVATAR click — stop or start
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleAvatarClick = useCallback(() => {
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    } else if (!isListening && !isThinking) {
+      stopAudio();
+    } else if (isListening) {
+      stopListening();
+    } else if (!isThinking) {
       startListening();
     }
-  };
+  }, [isSpeaking, isListening, isThinking, startListening, stopListening, stopAudio]);
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Derived values for display
+  // ─────────────────────────────────────────────────────────────────────────
+  const statusLabel = isThinking ? 'Thinking...'
+    : isSpeaking   ? 'Speaking...'
+    : isListening  ? 'Listening...'
+    : 'Krishimithram';
+
+  const micLabel = isListening ? 'Listening...'
+    : isThinking  ? 'Thinking...'
+    : 'Tap to Speak';
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className={`krishi-widget-card ${isOpen ? 'open' : ''}`}>
-        <button className="krishi-close-btn" onClick={() => setIsOpen(false)} aria-label="Close widget">
-          ✕
-        </button>
+      {/* ── Expanded Panel ──────────────────────────────────────────────── */}
+      <div className={`ka-panel${isOpen ? ' ka-open' : ''}`} role="dialog" aria-label="Krishimithram Voice Assistant">
 
-        {/* Transcript bubble */}
+        <button className="ka-close" onClick={() => { setIsOpen(false); stopListening(); stopAudio(); }} aria-label="Close assistant">✕</button>
+
+        {/* Transcript bubble — what the user said */}
         {transcript && (
-          <div className="krishi-transcript">
-            <strong>You said:</strong>
+          <div className="ka-bubble">
+            <strong>🎤 You said</strong>
             {transcript}
+          </div>
+        )}
+
+        {/* Thinking dots */}
+        {isThinking && (
+          <div className="ka-dots" aria-live="polite" aria-label="Processing">
+            <span /><span /><span />
+          </div>
+        )}
+
+        {/* AI response — subtitle fallback box */}
+        {aiReply && !isThinking && (
+          <div className="ka-subtitle">
+            {!hasNativeVoice && (
+              <div className="ka-text-mode-badge">
+                📝 Text Mode Active
+              </div>
+            )}
+            <strong>🌾 Krishimithram</strong>
+            {aiReply}
+          </div>
+        )}
+
+        {/* Error display */}
+        {errorMsg && (
+          <div className="ka-error" role="alert">
+            ⚠️ {errorMsg}
           </div>
         )}
 
         {/* Avatar */}
         <div
-          className="krishi-avatar-wrapper"
+          className="ka-avatar-wrap"
           onClick={handleAvatarClick}
-          title="Tap to speak"
           role="button"
-          aria-label={isSpeaking ? 'Avatar speaking — click to stop' : 'Click to start voice assistant'}
+          tabIndex={0}
+          aria-label={isSpeaking ? 'Speaking — click to stop' : isListening ? 'Listening — click to stop' : 'Click to start speaking'}
+          onKeyDown={e => e.key === 'Enter' && handleAvatarClick()}
         >
-          {/* Ripple rings when listening */}
           {isListening && (
             <>
-              <div className="krishi-ripple" />
-              <div className="krishi-ripple krishi-ripple-2" />
+              <div className="ka-ripple" />
+              <div className="ka-ripple ka-ripple-2" />
             </>
           )}
-
-          <div className={`krishi-avatar-bg ${isSpeaking || isThinking ? 'speaking' : 'idle'}`}>
+          <div className={`ka-avatar-circle${(isSpeaking || isThinking) ? ' ka-busy' : ' ka-idle'}`}>
             <AvatarSVG speaking={isSpeaking} />
-            {isSpeaking && <div className="krishi-badge">🔊</div>}
-            {isThinking && !isSpeaking && <div className="krishi-badge">⏳</div>}
+            {isSpeaking  && <div className="ka-badge">🔊</div>}
+            {isThinking && !isSpeaking && <div className="ka-badge">⏳</div>}
           </div>
-
-          {/* Status label below avatar */}
-          <span className="krishi-label">
-            {isThinking ? 'Thinking...' : isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : 'Krishimithram'}
-          </span>
+          <span className="ka-status-lbl">{statusLabel}</span>
         </div>
 
-        {/* Language Toggle Row */}
-        <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto', marginTop: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          {[
-            { code: 'en-IN', label: 'English' },
-            { code: 'ml-IN', label: 'മലയാളം' },
-            { code: 'hi-IN', label: 'हिंदी' },
-          ].map((lang) => (
+        {/* Language selector */}
+        <div className="ka-lang-row" role="group" aria-label="Select language">
+          {([
+            { code: 'en-IN' as const, label: 'English' },
+            { code: 'ml-IN' as const, label: 'മലയാളം' },
+            { code: 'hi-IN' as const, label: 'हिंदी' },
+          ]).map(({ code, label }) => (
             <button
-              key={lang.code}
-              onClick={() => setSelectedLang(lang.code)}
-              style={{
-                padding: '10px 16px',
-                minHeight: '44px',
-                borderRadius: '14px',
-                border: '1px solid ' + (selectedLang === lang.code ? '#16a34a' : 'rgba(34,197,94,0.3)'),
-                fontSize: '11px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                background: selectedLang === lang.code ? '#16a34a' : 'rgba(255,255,255,0.95)',
-                color: selectedLang === lang.code ? '#fff' : '#14532d',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s',
-                fontFamily: 'inherit'
-              }}
+              key={code}
+              className={`ka-lang-btn${selectedLang === code ? ' ka-active' : ''}`}
+              onClick={() => { setSelectedLang(code); setErrorMsg(''); setAiReply(''); }}
+              aria-pressed={selectedLang === code}
             >
-              {lang.label}
+              {label}
             </button>
           ))}
         </div>
 
-        {/* Mic trigger button */}
+        {/* Mic button */}
         <button
-          className={`krishi-mic-btn ${isListening ? 'listening' : 'idle'}`}
+          className={`ka-mic-btn${isListening ? ' ka-listening-btn' : ' ka-idle-btn'}`}
           onClick={startListening}
           disabled={isSpeaking || isThinking}
-          aria-label={isListening ? 'Listening' : 'Start voice assistant'}
-          style={{ marginTop: '4px' }}
+          aria-label={isListening ? 'Listening in progress' : 'Start voice input'}
         >
-          <span style={{ fontSize: '16px' }}>{isListening ? '🎙️' : '🎤'}</span>
-          {isListening ? 'Listening...' : isThinking ? 'Thinking...' : 'Tap to Speak'}
+          <span style={{ fontSize: '17px' }}>{isListening ? '🎙️' : '🎤'}</span>
+          {micLabel}
         </button>
+
       </div>
 
-      <button 
-        className={`krishi-fab ${isOpen ? 'hidden' : ''}`}
-        onClick={() => setIsOpen(true)}
-        aria-label="Open Krishimithram Assistant"
+      {/* ── Floating Action Button ───────────────────────────────────────── */}
+      <button
+        className={`ka-fab${isOpen ? ' ka-fab-hidden' : ''}`}
+        style={{ left: fabPos.x, top: fabPos.y, bottom: 'auto', right: 'auto' }}
+        onClick={handleFabClick}
+        onMouseDown={e  => { e.preventDefault(); onDragStart(e.clientX, e.clientY); }}
+        onTouchStart={e => onDragStart(e.touches[0].clientX, e.touches[0].clientY)}
+        aria-label="Open Krishimithram Voice Assistant"
+        aria-expanded={isOpen}
       >
-        <span style={{ fontSize: '24px' }}>🎙️</span>
+        <span style={{ fontSize: '26px', lineHeight: 1 }}>🎙️</span>
       </button>
     </>
   );

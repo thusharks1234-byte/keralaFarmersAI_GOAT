@@ -199,7 +199,7 @@ export default function Signup() {
             <div className="form-group">
               <label className="form-label">{t.auth.language}</label>
               <div style={{ display: 'flex', gap: '12px' }}>
-                {(['en', 'ml'] as Language[]).map(lang => (
+                {(['en', 'ml', 'hi'] as Language[]).map(lang => (
                   <label
                     key={lang}
                     style={{
@@ -223,7 +223,7 @@ export default function Signup() {
                       onChange={() => update('preferredLanguage', lang)}
                       style={{ accentColor: 'var(--agri-green-600)' }}
                     />
-                    {lang === 'en' ? 'English' : 'മലയാളം'}
+                    {lang === 'en' ? 'English' : lang === 'ml' ? 'മലയാളം' : 'हिंदी'}
                   </label>
                 ))}
               </div>

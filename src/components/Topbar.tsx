@@ -132,6 +132,13 @@ export function Topbar({ onMenuClick, pageTitle }: { onMenuClick?: () => void; p
         >
           ML
         </button>
+        <button
+          className={`lang-btn${language === 'hi' ? ' active' : ''}`}
+          onClick={() => setLanguage('hi')}
+          aria-pressed={language === 'hi'}
+        >
+          HI
+        </button>
       </div>
 
       <button

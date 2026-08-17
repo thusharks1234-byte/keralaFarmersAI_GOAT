@@ -260,6 +260,7 @@ export const en = {
     loading: 'Loading...',
     error: 'Something went wrong.',
     noData: 'No data available.',
+    unknown: 'Unknown',
     save: 'Save',
     cancel: 'Cancel',
     edit: 'Edit',

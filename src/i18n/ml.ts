@@ -247,6 +247,7 @@ export const ml: TranslationKeys = {
     loading: 'ലോഡ് ചെയ്യുന്നു...',
     error: 'എന്തോ കുഴപ്പം.',
     noData: 'ഡാറ്റ ലഭ്യമല്ല.',
+    unknown: 'വിവരം ലഭ്യമല്ല',
     save: 'സൂക്ഷിക്കുക',
     cancel: 'റദ്ദാക്കുക',
     edit: 'എഡിറ്റ് ചെയ്യൂ',

@@ -197,10 +197,10 @@ export default function Dashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   {[
-                    { label: 'District', value: farm.district || '—' },
-                    { label: 'Area', value: farm.area_acres ? `${farm.area_acres} acres` : '—' },
-                    { label: 'Farm Type', value: farm.farm_type || '—' },
-                    { label: 'Experience', value: farm.farming_experience_years ? `${farm.farming_experience_years} yrs` : '—' },
+                    { label: t.profile.district, value: farm.district || t.general.unknown },
+                    { label: t.profile.areaAcres, value: farm.area_acres ? `${farm.area_acres} acres` : t.general.unknown },
+                    { label: t.profile.farmType, value: farm.farm_type || t.general.unknown },
+                    { label: t.profile.experience, value: farm.farming_experience_years ? `${farm.farming_experience_years} yrs` : t.general.unknown },
                   ].map(({ label, value }) => (
                     <div key={label}>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>

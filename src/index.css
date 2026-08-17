@@ -2838,3 +2838,7 @@ img, svg, video, canvas, iframe {
     width: min(280px, 85vw);
   }
 }
+
+@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr !important; gap: var(--space-3) !important; } }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

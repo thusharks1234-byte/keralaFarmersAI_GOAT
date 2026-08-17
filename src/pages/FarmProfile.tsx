@@ -234,7 +234,7 @@ export default function FarmProfile() {
 
       <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
         {/* Desktop Tabs / Mobile Accordion headers could go here. Simple tabs for now. */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+        <div className="hide-scrollbar" style={{ display: 'flex', borderBottom: '1px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -263,6 +263,7 @@ export default function FarmProfile() {
                 <select className="form-input form-select" value={profile.preferred_language || 'en'} onChange={e => setProfile({...profile, preferred_language: e.target.value as Language})}>
                   <option value="en">English</option>
                   <option value="ml">മലയാളം</option>
+                  <option value="hi">हिंदी</option>
                 </select>
               </div>
             </div>

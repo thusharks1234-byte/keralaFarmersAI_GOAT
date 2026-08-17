@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { en } from '../i18n/en';
 import { ml } from '../i18n/ml';
+import { hi } from '../i18n/hi';
 import type { Language } from '../types';
 
 interface LanguageContextType {
@@ -17,7 +18,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return (localStorage.getItem('km_language') as Language) || 'en';
   });
 
-  const t = language === 'ml' ? ml : en;
+  const t = language === 'ml' ? ml : language === 'hi' ? hi : en;
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
