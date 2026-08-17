@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { en } from '../i18n/en';
 import { ml } from '../i18n/ml';
-import { hi } from '../i18n/hi';
+import { hi } from '../i18n/hi'; // Hindi translations
 import type { Language } from '../types';
 
 interface LanguageContextType {
