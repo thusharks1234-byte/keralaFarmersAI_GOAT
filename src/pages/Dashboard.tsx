@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -90,12 +90,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [currentCrop, setCurrentCrop] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    loadDashboard();
-  }, [user]);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
       // Parallel fetch
@@ -138,7 +133,12 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadDashboard();
+  }, [user, loadDashboard]);
 
   const QUICK_ACCESS = [
     { to: '/ai-assistant', icon: '🤖', label: t.nav.aiAssistant, disabled: false },

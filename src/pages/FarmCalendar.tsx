@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -25,11 +25,9 @@ export default function FarmCalendar() {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Partial<FarmTask>>({});
 
-  useEffect(() => {
-    loadTasks();
-  }, [user, currentDate]);
 
-  const loadTasks = async () => {
+
+  const loadTasks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -57,7 +55,11 @@ export default function FarmCalendar() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, currentDate, farmId]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [user, currentDate, loadTasks]);
 
   const saveTask = async (e: React.FormEvent) => {
     e.preventDefault();

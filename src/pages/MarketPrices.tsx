@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Search, MapPin, Loader2, Filter } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -57,7 +57,7 @@ export default function MarketPrices() {
     return dynamicTranslations[text] || mlDict[text] || text;
   };
 
-  const performDynamicTranslation = async (records: MandiRecord[]) => {
+  const performDynamicTranslation = useCallback(async (records: MandiRecord[]) => {
     if (language !== 'ml' || records.length === 0) return;
 
     const textsToTranslate = new Set<string>();
@@ -81,7 +81,7 @@ export default function MarketPrices() {
     } finally {
       setTranslating(false);
     }
-  };
+  }, [language, dynamicTranslations]);
   
   // Try to pre-fill district from farm profile
   useEffect(() => {
@@ -94,9 +94,10 @@ export default function MarketPrices() {
         });
     }
     fetchPrices();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const fetchPrices = async () => {
+  const fetchPrices = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -114,12 +115,12 @@ export default function MarketPrices() {
       } else {
         setData([]);
       }
-    } catch (err) {
+    } catch {
       setError(t.general.error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [stateFilter, language, performDynamicTranslation, t.general.error]);
 
   // Prevent stateFilter effect from firing on initial mount (it already fetches via the user effect)
   const hasMountedRef = useRef(false);
@@ -132,14 +133,14 @@ export default function MarketPrices() {
     }
     fetchPrices();
     setDistrictFilter(''); // reset district when state changes
-  }, [stateFilter]);
+  }, [fetchPrices, stateFilter]);
 
   // When language switches to Malayalam, translate existing data
   useEffect(() => {
     if (language === 'ml' && data.length > 0) {
       performDynamicTranslation(data);
     }
-  }, [language, data]);
+  }, [language, data, performDynamicTranslation]);
 
   const filteredData = data.filter(r => {
     const s = search.toLowerCase();

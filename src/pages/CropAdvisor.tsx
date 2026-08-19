@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -17,11 +17,9 @@ export default function CropAdvisor() {
   const [recommendations, setRecommendations] = useState<CropRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, [user]);
 
-  const loadData = async () => {
+
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -51,7 +49,11 @@ export default function CropAdvisor() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadData();
+  }, [user, loadData]);
 
   if (loading) {
     return (

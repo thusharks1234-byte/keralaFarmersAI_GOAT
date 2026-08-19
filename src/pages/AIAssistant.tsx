@@ -72,16 +72,24 @@ export default function AIAssistant() {
     }
   };
 
-  useEffect(() => {
-    loadSessions();
-    loadFarmContext();
-  }, [user]);
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, sending]);
 
-  const loadFarmContext = async () => {
+  const selectSession = useCallback(async (session: ChatSession) => {
+    setCurrentSession(session);
+    setMessages([]);
+    const { data } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('session_id', session.id)
+      .order('created_at', { ascending: true });
+    setMessages(data || []);
+  }, []);
+
+  const loadFarmContext = useCallback(async () => {
     if (!user) return;
     try {
       const { data: farm } = await supabase.from('farms').select('*').eq('owner_id', user.id).single();
@@ -96,9 +104,9 @@ export default function AIAssistant() {
         setFarmContext(ctx);
       }
     } catch {}
-  };
+  }, [user]);
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -119,18 +127,13 @@ export default function AIAssistant() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, currentSession, selectSession]);
 
-  const selectSession = async (session: ChatSession) => {
-    setCurrentSession(session);
-    setMessages([]);
-    const { data } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('session_id', session.id)
-      .order('created_at', { ascending: true });
-    setMessages(data || []);
-  };
+
+  useEffect(() => {
+    loadSessions();
+    loadFarmContext();
+  }, [user, loadSessions, loadFarmContext]);
 
   const createNewSession = async () => {
     if (!user) return;

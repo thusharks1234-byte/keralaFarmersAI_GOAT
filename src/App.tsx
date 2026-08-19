@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 
+
 import { AppShell } from './layouts/AppShell';
 import { PublicLayout } from './layouts/PublicLayout';
 
@@ -29,6 +30,8 @@ import DiseaseDoctor from './pages/DiseaseDoctor';
 import SmartAlerts from './pages/SmartAlerts';
 import FarmProfile from './pages/FarmProfile';
 import Settings from './pages/Settings';
+
+import VoiceAssistant from './components/VoiceAssistant';
 
 export default function App() {
   return (
@@ -68,6 +71,9 @@ export default function App() {
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+
+          {/* Global floating Voice Assistant */}
+          <VoiceAssistant />
         </AuthProvider>
       </LanguageProvider>
     </Router>

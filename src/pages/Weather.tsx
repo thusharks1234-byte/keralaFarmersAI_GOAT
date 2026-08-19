@@ -114,6 +114,20 @@ export default function Weather() {
     }
   }, [user, t]);
 
+  const loadFarmFallback = useCallback(async () => {
+    if (!user) { setLoading(false); return; }
+    try {
+      const { data: farm } = await supabase.from('farms').select('latitude, longitude, district').eq('owner_id', user.id).single();
+      if (farm?.latitude && farm?.longitude) {
+        await fetchWeatherData(farm.latitude, farm.longitude, farm.district || 'Farm Location');
+      } else {
+        setLoading(false);
+      }
+    } catch {
+      setLoading(false);
+    }
+  }, [user, fetchWeatherData]);
+
   const requestGeolocation = useCallback(async () => {
     setGeoStatus('requesting');
     setLoading(true);
@@ -158,25 +172,13 @@ export default function Weather() {
     } else {
       tryBrowserGeo();
     }
-  }, [fetchWeatherData]);
+  }, [fetchWeatherData, loadFarmFallback]);
 
-  const loadFarmFallback = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
-    try {
-      const { data: farm } = await supabase.from('farms').select('latitude, longitude, district').eq('owner_id', user.id).single();
-      if (farm?.latitude && farm?.longitude) {
-        await fetchWeatherData(farm.latitude, farm.longitude, farm.district || 'Farm Location');
-      } else {
-        setLoading(false);
-      }
-    } catch {
-      setLoading(false);
-    }
-  }, [user, fetchWeatherData]);
+
 
   useEffect(() => {
     requestGeolocation();
-  }, []);
+  }, [requestGeolocation]);
 
 
   if (loading) {

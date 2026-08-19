@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -21,11 +21,9 @@ export default function FarmProfile() {
   const [crop, setCrop] = useState<Partial<CropCycle>>({});
   const [prefs, setPrefs] = useState<Partial<UserPreferences>>({});
 
-  useEffect(() => {
-    loadData();
-  }, [user]);
 
-  const loadData = async () => {
+
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -52,7 +50,11 @@ export default function FarmProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadData();
+  }, [user, loadData]);
 
   // Kerala bounding box (approximate)
   const KERALA_BOUNDS = { latMin: 8.0, latMax: 12.9, lngMin: 74.8, lngMax: 77.6 };
@@ -102,7 +104,7 @@ export default function FarmProfile() {
           village: prev.village || postOffice.Name
         }));
       }
-    } catch (e) {}
+    } catch {}
   };
 
   const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
