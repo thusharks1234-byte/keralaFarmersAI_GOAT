@@ -17,19 +17,31 @@ function buildMessages(message: string, context: string, lang: string) {
   return [
     {
       role: 'system',
-      content: `${SYSTEM_PROMPT}\nFarm Context: ${context || 'Kerala farmer'}\nLanguage: ${lang}`,
+      content: `${SYSTEM_PROMPT}\nFarm Context: ${context || 'Kerala farmer'}\nLanguage: ${lang}\nIMPORTANT: Do NOT include any thinking, reasoning, or planning in your response. Reply ONLY with the final answer.`,
     },
     { role: 'user', content: message },
   ];
 }
 
+// Strip <think>...</think> blocks and verbose reasoning prefixes from model output
+function cleanResponse(text: string): string {
+  // Remove <think>...</think> blocks (Qwen reasoning mode)
+  let clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // Remove **Reasoning**...\n\n prefix (groq/compound style)
+  clean = clean.replace(/^\*\*Reasoning\*\*[\s\S]*?\*\*Resulting[^\n]*\*\*\n+>?\s*/i, '');
+  // Remove markdown blockquotes used as answer wrappers
+  clean = clean.replace(/^>\s*/gm, '');
+  return clean.trim();
+}
+
 // ─── 1. GROQ (PRIMARY — fastest, free tier) ───────────────────────────
 async function callGroq(message: string, context: string, lang: string): Promise<string> {
   const GROQ_MODELS = [
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'gemma2-9b-it',
-    'mixtral-8x7b-32768',
+    'groq/compound-mini',
+    'groq/compound',
+    'qwen/qwen3.6-27b',
+    'openai/gpt-oss-20b',
+    'openai/gpt-oss-120b',
   ];
 
   for (const model of GROQ_MODELS) {
@@ -49,7 +61,6 @@ async function callGroq(message: string, context: string, lang: string): Promise
       });
 
       if (response.status === 429) {
-        // Rate limited on this model, try next
         console.warn(`Groq model ${model} rate-limited, trying next...`);
         continue;
       }
@@ -61,10 +72,13 @@ async function callGroq(message: string, context: string, lang: string): Promise
       }
 
       const data = await response.json();
-      const text = data.choices?.[0]?.message?.content;
-      if (text) {
-        console.log(`✅ Groq success with model: ${model}`);
-        return text;
+      const raw = data.choices?.[0]?.message?.content;
+      if (raw) {
+        const text = cleanResponse(raw);
+        if (text) {
+          console.log(`✅ Groq success with model: ${model}`);
+          return text;
+        }
       }
     } catch (e) {
       console.warn(`Groq model ${model} threw:`, e);
@@ -269,7 +283,7 @@ ${JSON.stringify(chunk)}`;
           'Authorization': `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          model: 'qwen/qwen3.6-27b',
           messages: [
             { role: 'system', content: 'You are a translation assistant returning raw JSON mapping.' },
             { role: 'user', content: prompt }
@@ -336,8 +350,8 @@ Provide:
 Provide clear, structured, and actionable formatting in markdown.`;
 
   const GROQ_VISION_MODELS = [
-    'llama-3.2-11b-vision-preview',
-    'llama-3.2-90b-vision-preview'
+    'openai/gpt-oss-120b',
+    'openai/gpt-oss-20b',
   ];
 
   let lastError: any;

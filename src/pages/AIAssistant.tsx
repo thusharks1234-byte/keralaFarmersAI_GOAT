@@ -184,46 +184,53 @@ export default function AIAssistant() {
     setSending(true);
     setError('');
 
-    // Optimistic user message
-    const tempMsg: ChatMessage = {
-      id: 'temp-' + Date.now(),
+    // Optimistic user message shown immediately
+    const tempUserMsg: ChatMessage = {
+      id: 'temp-user-' + Date.now(),
       session_id: session!.id,
       role: 'user',
       content: userMsg,
       created_at: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, tempMsg]);
+    setMessages(prev => [...prev, tempUserMsg]);
 
     // Auto-title session from first message
     if (messages.length === 0) {
       const title = userMsg.slice(0, 60);
-      await supabase.from('chat_sessions').update({ title }).eq('id', session!.id);
-      setSessions(prev => prev.map(s => s.id === session!.id ? { ...s, title } : s));
+      supabase.from('chat_sessions').update({ title }).eq('id', session!.id).then(() => {
+        setSessions(prev => prev.map(s => s.id === session!.id ? { ...s, title } : s));
+      });
     }
 
     try {
-      // Call the client-side orchestrator with automatic fallback
-      await sendChatMessage(
+      // Call AI with automatic provider fallback (Groq → OpenRouter → OpenAI)
+      const { reply } = await sendChatMessage(
         session!.id,
         userMsg,
         farmContext,
         language
       );
 
-      // Load actual messages from DB
-      const { data: msgs } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', session!.id)
-        .order('created_at', { ascending: true });
-      
-      setMessages(msgs || []);
+      // Replace temp user message + append real AI reply — no DB re-fetch needed
+      const assistantMsg: ChatMessage = {
+        id: 'temp-ai-' + Date.now(),
+        session_id: session!.id,
+        role: 'assistant',
+        content: reply,
+        created_at: new Date().toISOString(),
+      };
 
+      setMessages(prev => [
+        ...prev.filter(m => m.id !== tempUserMsg.id),
+        { ...tempUserMsg, id: 'user-' + Date.now() },
+        assistantMsg,
+      ]);
 
-    } catch {
-      setError(t.ai.error);
-      // Remove optimistic message
-      setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
+    } catch (err: any) {
+      console.error('sendMessage error:', err);
+      setError(err?.message || t.ai.error);
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id));
     } finally {
       setSending(false);
     }
