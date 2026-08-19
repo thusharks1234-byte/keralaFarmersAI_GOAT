@@ -23,38 +23,6 @@ function buildMessages(message: string, context: string, lang: string) {
   ];
 }
 
-// ─── 0. GEMINI (PRIMARY) ────────────────────────────────────────────────
-async function callGemini(message: string, context: string, lang: string): Promise<string> {
-  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
-  if (!GEMINI_API_KEY) throw new Error("Missing VITE_GEMINI_API_KEY");
-
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      system_instruction: {
-        parts: { text: `${SYSTEM_PROMPT}\nFarm Context: ${context || 'Kerala farmer'}\nLanguage: ${lang}` }
-      },
-      contents: [{
-        parts: [{ text: message }]
-      }]
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini failed (${response.status}): ${errText}`);
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Empty Gemini response');
-  
-  return text;
-}
-
 // ─── 1. GROQ (PRIMARY — fastest, free tier) ───────────────────────────
 async function callGroq(message: string, context: string, lang: string): Promise<string> {
   const GROQ_MODELS = [
@@ -208,42 +176,33 @@ export async function sendChatMessage(
   let provider = '';
   const errors: string[] = [];
 
-  // 0. Gemini
+  // 1. Groq
   try {
-    console.log('🚀 Trying Gemini...');
-    reply = await callGemini(message, context, lang);
-    provider = 'gemini';
-  } catch (e0) {
-    errors.push(`Gemini: ${(e0 as Error).message}`);
-    console.warn('⚠️ Gemini failed, trying Groq...');
+    console.log('🚀 Trying Groq...');
+    reply = await callGroq(message, context, lang);
+    provider = 'groq';
+  } catch (e1) {
+    errors.push(`Groq: ${(e1 as Error).message}`);
+    console.warn('⚠️ Groq failed, trying OpenRouter...');
 
-    // 1. Groq
+    // 2. OpenRouter
     try {
-      reply = await callGroq(message, context, lang);
-      provider = 'groq';
-    } catch (e1) {
-      errors.push(`Groq: ${(e1 as Error).message}`);
-      console.warn('⚠️ Groq failed, trying OpenRouter...');
+      reply = await callOpenRouter(message, context, lang);
+      provider = 'openrouter';
+    } catch (e2) {
+      errors.push(`OpenRouter: ${(e2 as Error).message}`);
+      console.warn('⚠️ OpenRouter failed, trying OpenAI...');
 
-      // 2. OpenRouter
+      // 3. OpenAI
       try {
-        reply = await callOpenRouter(message, context, lang);
-        provider = 'openrouter';
-      } catch (e2) {
-        errors.push(`OpenRouter: ${(e2 as Error).message}`);
-        console.warn('⚠️ OpenRouter failed, trying OpenAI...');
-
-        // 3. OpenAI
-        try {
-          reply = await callOpenAI(message, context, lang);
-          provider = 'openai';
-        } catch (e3) {
-          errors.push(`OpenAI: ${(e3 as Error).message}`);
-          console.error('❌ All providers failed:\n' + errors.join('\n'));
-          throw new Error(
-            'All AI services are temporarily unavailable. Please try again in a moment.'
-          );
-        }
+        reply = await callOpenAI(message, context, lang);
+        provider = 'openai';
+      } catch (e3) {
+        errors.push(`OpenAI: ${(e3 as Error).message}`);
+        console.error('❌ All providers failed:\n' + errors.join('\n'));
+        throw new Error(
+          'All AI services are temporarily unavailable. Please try again in a moment.'
+        );
       }
     }
   }
