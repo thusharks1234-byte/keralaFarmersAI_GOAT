@@ -28,10 +28,12 @@ export default function VoiceAssistant() {
   const [activeLang, setActiveLang] = useState<LanguageCode>('en-US');
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
   
   const recognitionRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Ensure voices are loaded (Chrome sometimes needs a nudge)
@@ -72,6 +74,7 @@ export default function VoiceAssistant() {
          recognitionRef.current.stop();
       }
       window.speechSynthesis.cancel();
+      audioRef.current?.pause();
     };
   }, []);
 
@@ -81,11 +84,20 @@ export default function VoiceAssistant() {
     }
   }, [activeLang]);
 
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsSpeaking(false);
+  };
+
   const toggleListening = () => {
     if (isListening) {
       recognitionRef.current?.stop();
     } else {
-      window.speechSynthesis.cancel(); // stop talking if we want to listen
+      stopSpeaking(); // stop any ongoing speech before listening
       setTranscript('');
       setResponse('');
       try {
@@ -140,31 +152,99 @@ export default function VoiceAssistant() {
     }
   };
 
+  // ─── Dual-engine TTS ───────────────────────────────────────────────
+  // 1st try: Web Speech API (works if OS has voice installed)
+  // 2nd try: Google Translate TTS via <audio> element (works everywhere, no CORS)
   const speakResponse = (text: string, lang: LanguageCode) => {
-    window.speechSynthesis.cancel(); 
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = 1.0;
-    
+    stopSpeaking();
+
+    // Map our LanguageCode to Google Translate lang codes
+    const gtLangMap: Record<LanguageCode, string> = {
+      'en-US': 'en',
+      'ml-IN': 'ml',
+      'hi-IN': 'hi',
+    };
+    const gtLang = gtLangMap[lang];
+
+    // Helper: play via Google Translate TTS audio element
+    const playViaGoogleTTS = () => {
+      // Google Translate TTS supports up to ~200 chars per request
+      // Split long text into chunks
+      const chunks: string[] = [];
+      const words = text.split(' ');
+      let current = '';
+      for (const word of words) {
+        if ((current + ' ' + word).trim().length > 180) {
+          if (current) chunks.push(current.trim());
+          current = word;
+        } else {
+          current = (current + ' ' + word).trim();
+        }
+      }
+      if (current) chunks.push(current.trim());
+
+      let chunkIndex = 0;
+      const playChunk = () => {
+        if (chunkIndex >= chunks.length) {
+          setIsSpeaking(false);
+          return;
+        }
+        const chunk = chunks[chunkIndex++];
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=${gtLang}&client=tw-ob`;
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = playChunk;
+        audio.onerror = () => {
+          console.warn('Google TTS audio error for chunk:', chunk);
+          setIsSpeaking(false);
+        };
+        setIsSpeaking(true);
+        audio.play().catch(err => {
+          console.error('Audio play failed:', err);
+          setIsSpeaking(false);
+        });
+      };
+      playChunk();
+    };
+
+    // Try Web Speech API first — check if a matching voice exists
     const voices = window.speechSynthesis.getVoices();
-    // Try to find an exact match first
-    let voice = voices.find(v => v.lang === lang);
-    // Fallback to language prefix
-    if (!voice) {
-      voice = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+    const matchedVoice =
+      voices.find(v => v.lang === lang) ||
+      voices.find(v => v.lang.startsWith(lang.split('-')[0])) ||
+      voices.find(v => v.lang.toLowerCase().startsWith(gtLang));
+
+    if (matchedVoice) {
+      // Web Speech API path (Android, iOS, Windows with voice pack installed)
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.voice = matchedVoice;
+      utterance.rate = 1.0;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => {
+        console.warn('Web Speech failed, falling back to Google TTS');
+        setIsSpeaking(false);
+        playViaGoogleTTS();
+      };
+      window.speechSynthesis.speak(utterance);
+
+      // Chrome bug: speechSynthesis can stall — detect and fallback
+      setTimeout(() => {
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+          // Still fine, do nothing
+        }
+      }, 500);
+    } else {
+      // No matching OS voice — use Google Translate TTS directly
+      console.info(`No ${lang} voice found on this device. Using Google Translate TTS.`);
+      playViaGoogleTTS();
     }
-    
-    if (voice) {
-      utterance.voice = voice;
-    }
-    
-    window.speechSynthesis.speak(utterance);
   };
 
   const closeAssistant = () => {
     setIsOpen(false);
-    window.speechSynthesis.cancel();
+    stopSpeaking();
     if (isListening) recognitionRef.current?.stop();
   };
 
@@ -290,7 +370,17 @@ export default function VoiceAssistant() {
                   ) : response ? (
                     <div style={{ width: '100%', textAlign: 'left' }}>
                       <div style={{ backgroundColor: '#f9fafb', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', border: '1px solid #f3f4f6', position: 'relative' }}>
-                         <Volume2 size={16} style={{ position: 'absolute', top: '12px', right: '12px', color: '#4ade80' }} />
+                         {isSpeaking ? (
+                           <motion.div
+                             animate={{ opacity: [0.4, 1, 0.4], scale: [0.95, 1.1, 0.95] }}
+                             transition={{ repeat: Infinity, duration: 1.5 }}
+                             style={{ position: 'absolute', top: '12px', right: '12px' }}
+                           >
+                             <Volume2 size={16} style={{ color: '#10b981' }} />
+                           </motion.div>
+                         ) : (
+                           <Volume2 size={16} style={{ position: 'absolute', top: '12px', right: '12px', color: '#9ca3af' }} />
+                         )}
                          <p style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Krishimithran</p>
                          <p style={{ color: '#1f2937', fontSize: '14px', lineHeight: 1.5, paddingRight: '24px' }}>{response}</p>
                       </div>
