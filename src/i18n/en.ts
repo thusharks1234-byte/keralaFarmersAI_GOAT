@@ -14,6 +14,7 @@ export const en = {
     diseaseDoctor: 'Disease Doctor',
     weather: 'Weather',
     marketPrices: 'Market Prices',
+    buyFertilisers: 'Buy Fertilisers',
     govtSchemes: 'Govt Schemes',
     farmCalendar: 'Farm Calendar',
     smartAlerts: 'Smart Alerts',

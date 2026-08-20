@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
   LayoutDashboard, Bot, Leaf, FlaskConical, Cloud, TrendingUp,
-  FileText, Calendar, Zap, User, Settings, LogOut, Sprout
+  FileText, Calendar, Zap, User, Settings, LogOut, Sprout, ShoppingBag
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/crop-advisor', icon: Leaf, labelKey: 'cropAdvisor' as const },
   { to: '/weather', icon: Cloud, labelKey: 'weather' as const },
   { to: '/market-prices', icon: TrendingUp, labelKey: 'marketPrices' as const },
+  { to: '/buy-fertilisers', icon: ShoppingBag, labelKey: 'buyFertilisers' as const, isComingSoon: true },
   { to: '/govt-schemes', icon: FileText, labelKey: 'govtSchemes' as const },
   { to: '/farm-calendar', icon: Calendar, labelKey: 'farmCalendar' as const },
   { to: '/disease-doctor', icon: FlaskConical, labelKey: 'diseaseDoctor' as const },
@@ -49,15 +50,29 @@ export function Sidebar({ onClose, isOpen }: { onClose?: () => void; isOpen?: bo
 
       <nav className="sidebar-nav">
         <div className="sidebar-section-label">Main Menu</div>
-        {NAV_ITEMS.map(({ to, icon: Icon, labelKey }) => (
+        {NAV_ITEMS.map(({ to, icon: Icon, labelKey, isComingSoon }) => (
           <NavLink
-            key={to}
+            key={labelKey}
             to={to}
             className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             onClick={handleClick}
           >
             <Icon size={18} />
             <span>{t.nav[labelKey]}</span>
+            {isComingSoon && (
+              <span style={{
+                fontSize: '0.65rem',
+                fontWeight: 'bold',
+                backgroundColor: 'rgba(253, 224, 71, 0.2)', // muted yellow bg
+                color: '#fde047', // soft yellow text
+                padding: '2px 6px',
+                borderRadius: '4px',
+                marginLeft: 'auto',
+                whiteSpace: 'nowrap'
+              }}>
+                Coming Soon
+              </span>
+            )}
           </NavLink>
         ))}
 

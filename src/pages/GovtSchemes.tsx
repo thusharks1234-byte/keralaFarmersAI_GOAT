@@ -73,7 +73,7 @@ const SCHEMES = [
     descEn: 'Insurance for major cash crops in Kerala like Rubber, Coconut, Arecanut, and Pepper against natural calamities.',
     descMl: 'റബ്ബർ, തെങ്ങ്, കുരുമുളക് തുടങ്ങിയ പ്രധാന നാണ്യവിളകൾക്ക് പ്രകൃതിദുരന്തങ്ങൾക്കെതിരെ ഇൻഷുറൻസ്.',
     eligibilityEn: 'Farmers cultivating notified crops in Kerala.',
-    link: 'https://keralaagriculture.gov.in/'
+    link: 'https://www.aims.kerala.gov.in/'
   },
   {
     id: 9,
@@ -82,7 +82,43 @@ const SCHEMES = [
     descEn: 'Adequate and timely credit support from the banking system for agricultural needs.',
     descMl: 'കാർഷിക ആവശ്യങ്ങൾക്ക് ബാങ്കുകളിൽ നിന്ന് സമയബന്ധിതമായി വായ്പ ലഭ്യമാക്കുന്ന പദ്ധതി.',
     eligibilityEn: 'All farmers, tenant farmers, and sharecroppers.',
-    link: 'https://pmkisan.gov.in/'
+    link: 'https://www.myscheme.gov.in/schemes/kcc'
+  },
+  {
+    id: 10,
+    titleEn: 'Agricultural Information Management System (AIMS)',
+    titleMl: 'കാർഷിക വിവര മാനേജ്മെന്റ് സിസ്റ്റം (AIMS)',
+    descEn: 'A unified portal for farmers to apply for various services, subsidies, crop loss relief, and royalties in Kerala.',
+    descMl: 'കേരളത്തിലെ കർഷകർക്ക് വിവിധ സേവനങ്ങൾ, സബ്സിഡികൾ, വിളനാശ ആശ്വാസം എന്നിവയ്ക്കായി അപേക്ഷിക്കാനുള്ള ഏകീകൃത പോർട്ടൽ.',
+    eligibilityEn: 'All farmers in Kerala registered with a valid Farmer ID.',
+    link: 'https://www.aims.kerala.gov.in/'
+  },
+  {
+    id: 11,
+    titleEn: 'KERA Scheme (Climate Resilient Agri-Value Chain Modernization)',
+    titleMl: 'കേര പദ്ധതി (KERA)',
+    descEn: 'World Bank-supported project focusing on modernizing agriculture value chains and building climate resilience.',
+    descMl: 'കാർഷിക മൂല്യശൃംഖലകൾ ആധുനികവൽക്കരിക്കുന്നതിനും കാലാവസ്ഥാ പ്രതിരോധം കെട്ടിപ്പടുക്കുന്നതിനുമുള്ള ലോകബാങ്ക് പിന്തുണയുള്ള പദ്ധതി.',
+    eligibilityEn: 'Farmers involved in specific crop value chains like rubber, coffee, cardamom, etc.',
+    link: 'https://kera.kerala.gov.in/'
+  },
+  {
+    id: 12,
+    titleEn: 'Kerala Farmer Registry (Agri Stack)',
+    titleMl: 'കേരള കർഷക രജിസ്ട്രി (Agri Stack)',
+    descEn: 'One-time registration for farmers to get a unique Farmer ID to seamlessly access government benefits.',
+    descMl: 'സർക്കാർ ആനുകൂല്യങ്ങൾ തടസ്സമില്ലാതെ ലഭിക്കുന്നതിന് കർഷകർക്ക് ഒരു യുണീക്ക് കർഷക ഐഡി ലഭിക്കുന്നതിനുള്ള ഒറ്റത്തവണ രജിസ്ട്രേഷൻ.',
+    eligibilityEn: 'Any farmer residing in Kerala.',
+    link: 'https://farmer.kerala.gov.in/'
+  },
+  {
+    id: 13,
+    titleEn: 'Kissan Kerala / Krishi Vivara Sanketham',
+    titleMl: 'കിസാൻ കേരള',
+    descEn: 'Comprehensive online agricultural information and advisory service for Kerala farmers.',
+    descMl: 'കേരളത്തിലെ കർഷകർക്കുള്ള സമഗ്ര ഓൺലൈൻ കാർഷിക വിവര-ഉപദേശക സേവനം.',
+    eligibilityEn: 'Open to all farmers and public.',
+    link: 'http://www.kissankerala.net/'
   }
 ];
 

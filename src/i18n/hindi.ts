@@ -14,6 +14,7 @@ export const hi = {
     diseaseDoctor: 'रोग डॉक्टर',
     weather: 'मौसम',
     marketPrices: 'बाजार भाव',
+    buyFertilisers: 'उर्वरक खरीदें',
     govtSchemes: 'सरकारी योजनाएं',
     farmCalendar: 'कृषि कैलेंडर',
     smartAlerts: 'स्मार्ट अलर्ट',

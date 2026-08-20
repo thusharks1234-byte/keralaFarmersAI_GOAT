@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import type { Farm, FarmActivity, FarmTask } from '../types';
 import {
   Cloud, Leaf, Plus, MapPin, ArrowRight, Clock,
-  Sprout, Calendar, Activity
+  Sprout, Calendar, Activity, Bot, FlaskConical, TrendingUp, Landmark
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
@@ -141,11 +141,11 @@ export default function Dashboard() {
   }, [user, loadDashboard]);
 
   const QUICK_ACCESS = [
-    { to: '/ai-assistant', icon: '🤖', label: t.nav.aiAssistant, disabled: false },
-    { to: '/crop-advisor', icon: '🌱', label: t.nav.cropAdvisor, disabled: false },
-    { to: '/disease-doctor', icon: '🔬', label: t.nav.diseaseDoctor, disabled: false },
-    { to: '/market-prices', icon: '📊', label: t.nav.marketPrices, disabled: false },
-    { to: '/govt-schemes', icon: '🏛️', label: t.nav.govtSchemes, disabled: false },
+    { to: '/ai-assistant', icon: <Bot size={28} strokeWidth={1.5} style={{ color: 'var(--agri-green-600)' }} />, label: t.nav.aiAssistant, disabled: false },
+    { to: '/crop-advisor', icon: <Leaf size={28} strokeWidth={1.5} style={{ color: 'var(--leaf-green-500)' }} />, label: t.nav.cropAdvisor, disabled: false },
+    { to: '/disease-doctor', icon: <FlaskConical size={28} strokeWidth={1.5} style={{ color: 'var(--blue-500)' }} />, label: t.nav.diseaseDoctor, disabled: false },
+    { to: '/market-prices', icon: <TrendingUp size={28} strokeWidth={1.5} style={{ color: 'var(--copper-500)' }} />, label: t.nav.marketPrices, disabled: false },
+    { to: '/govt-schemes', icon: <Landmark size={28} strokeWidth={1.5} style={{ color: 'var(--forest-600)' }} />, label: t.nav.govtSchemes, disabled: false },
   ];
 
   const TASK_CAT_COLORS: Record<string, string> = {

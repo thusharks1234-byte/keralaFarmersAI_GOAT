@@ -2853,3 +2853,199 @@ img, svg, video, canvas, iframe {
   50% { transform: scale(1.1); opacity: 0.7; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* ============================================================
+   COMPREHENSIVE MOBILE RESPONSIVE OVERRIDES
+   Covers: layout shell, topbar, sidebar, dashboard, hero,
+   quick-access, farm profile tabs, govt schemes, market prices
+   ============================================================ */
+
+/* ── Tablet (≤ 1023px): hide sidebar, zero out its margin ── */
+@media (max-width: 1023px) {
+  /* Sidebar hidden by default, slides in via .open class */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Main content takes full width */
+  .app-main {
+    margin-left: 0;
+  }
+
+  /* Topbar starts at left: 0 */
+  .topbar {
+    left: 0;
+    padding: 0 20px;
+  }
+
+  /* Page content — add bottom padding for mobile bottom nav */
+  .page-content {
+    padding: calc(var(--topbar-height) + 20px) 20px 80px;
+  }
+
+  /* Dashboard top row → single column on tablet */
+  .dashboard-top-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Mobile (≤ 767px): full single-column layout ── */
+@media (max-width: 767px) {
+  /* Page content minimal padding */
+  .page-content {
+    padding: calc(var(--topbar-height) + 16px) 14px 84px;
+  }
+
+  /* Dashboard — all single column */
+  .dashboard-top-row,
+  .dashboard-bottom-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* Quick access: 3-column grid on mobile (wraps to 2 rows) */
+  .quick-access-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .quick-tile {
+    padding: 14px 8px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .quick-tile-label {
+    font-size: 10px;
+  }
+
+  /* Dashboard welcome header */
+  .section-title {
+    font-size: 22px;
+  }
+
+  /* Hero section — stack single column */
+  .hero-content {
+    grid-template-columns: 1fr;
+    padding: calc(70px + 40px) 20px 40px;
+    gap: 32px;
+  }
+
+  .hero-title {
+    font-size: clamp(30px, 8vw, 42px);
+  }
+
+  .hero-desc {
+    font-size: 16px;
+  }
+
+  /* AI widget preview hidden on small mobile */
+  .ai-widget-preview {
+    display: none;
+  }
+
+  /* Public navbar */
+  .public-navbar {
+    padding: 0 16px;
+  }
+
+  /* Card padding reduce */
+  .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  /* Stat card */
+  .stat-card {
+    padding: 16px;
+  }
+
+  /* Modal full-width on mobile */
+  .modal {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+    max-width: 100%;
+  }
+
+  /* Toast — full width bottom */
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: 84px; /* above mobile nav */
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+  }
+
+  /* Market prices chart */
+  .market-chart-container {
+    height: 220px;
+  }
+}
+
+/* ── Small phones (≤ 480px) ── */
+@media (max-width: 480px) {
+  /* Quick access: 2-column on very small screens */
+  .quick-access-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Farm profile tab strip — scrollable */
+  .farm-profile-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .farm-profile-tabs::-webkit-scrollbar { display: none; }
+
+  /* Tab buttons don't shrink below minimum */
+  .tab {
+    flex-shrink: 0;
+    min-width: max-content;
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  /* Page content even more compact */
+  .page-content {
+    padding: calc(var(--topbar-height) + 12px) 12px 84px;
+  }
+
+  /* Topbar chip text smaller */
+  .topbar-chip {
+    font-size: 11px;
+    padding: 4px 10px;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Govt schemes expand button */
+  .scheme-expand-btn {
+    padding: 14px 16px;
+  }
+
+  /* Form submit button — full width on tiny screens */
+  form .btn-primary[type="submit"] {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Ensure iOS safe-area insets are respected ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .page-content {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+  .mobile-bottom-nav {
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+}
+

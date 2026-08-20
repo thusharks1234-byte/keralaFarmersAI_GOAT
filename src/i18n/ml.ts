@@ -15,6 +15,7 @@ export const ml: TranslationKeys = {
     diseaseDoctor: 'രോഗ ഡോക്ടർ',
     weather: 'കാലാവസ്ഥ',
     marketPrices: 'വിപണി വില',
+    buyFertilisers: 'വളം വാങ്ങുക',
     govtSchemes: 'സർക്കാർ പദ്ധതികൾ',
     farmCalendar: 'കൃഷി കലണ്ടർ',
     smartAlerts: 'സ്മാർട്ട് അലേർട്ടുകൾ',

@@ -123,13 +123,15 @@ export default function FarmProfile() {
 
     try {
       // 1. Profile
-      await supabase.from('profiles').upsert({
+      const { error: pErr } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: profile.full_name,
         phone: profile.phone,
         preferred_language: profile.preferred_language,
         updated_at: new Date().toISOString(),
       });
+      if (pErr) throw pErr;
+
       if (profile.preferred_language && profile.preferred_language !== language) {
         setLanguage(profile.preferred_language as Language);
       }
@@ -150,9 +152,11 @@ export default function FarmProfile() {
       };
 
       if (farmId) {
-        await supabase.from('farms').update(farmData).eq('id', farmId);
+        const { error: fErr } = await supabase.from('farms').update(farmData).eq('id', farmId);
+        if (fErr) throw fErr;
       } else {
-        const { data } = await supabase.from('farms').insert(farmData).select('id').single();
+        const { data, error: fErr } = await supabase.from('farms').insert(farmData).select('id').single();
+        if (fErr) throw fErr;
         if (data) farmId = data.id;
       }
 
@@ -169,9 +173,11 @@ export default function FarmProfile() {
           updated_at: new Date().toISOString(),
         };
         if (soil.id) {
-          await supabase.from('soil_data').update(soilData).eq('id', soil.id);
+          const { error: sErr } = await supabase.from('soil_data').update(soilData).eq('id', soil.id);
+          if (sErr) throw sErr;
         } else {
-          await supabase.from('soil_data').insert(soilData);
+          const { error: sErr } = await supabase.from('soil_data').insert(soilData);
+          if (sErr) throw sErr;
         }
 
         const cropData = {
@@ -183,24 +189,27 @@ export default function FarmProfile() {
           previous_crop: crop.previous_crop,
         };
         if (crop.id) {
-          await supabase.from('crop_cycles').update(cropData).eq('id', crop.id);
+          const { error: cErr } = await supabase.from('crop_cycles').update(cropData).eq('id', crop.id);
+          if (cErr) throw cErr;
         } else {
-          await supabase.from('crop_cycles').insert(cropData);
+          const { error: cErr } = await supabase.from('crop_cycles').insert(cropData);
+          if (cErr) throw cErr;
         }
       }
 
       // 4. Preferences
-      await supabase.from('user_preferences').upsert({
+      const { error: prefErr } = await supabase.from('user_preferences').upsert({
         owner_id: user.id,
-        units: prefs.units || 'metric',
         notifications_enabled: prefs.notifications_enabled ?? true,
         updated_at: new Date().toISOString(),
       });
+      if (prefErr) throw prefErr;
 
       setMessage({ text: t.profile.saved, type: 'success' });
       setTimeout(() => setMessage(null), 3000);
       loadData(); // reload to get IDs
     } catch (err: any) {
+      console.error(err);
       setMessage({ text: err.message || t.general.error, type: 'error' });
     } finally {
       setSaving(false);
@@ -397,13 +406,7 @@ export default function FarmProfile() {
 
           {activeTab === 'prefs' && (
             <div className="grid-2" style={{ gap: '24px' }}>
-              <div className="form-group">
-                <label className="form-label">{t.profile.units}</label>
-                <select className="form-input form-select" value={prefs.units || 'metric'} onChange={e => setPrefs({...prefs, units: e.target.value})}>
-                  <option value="metric">Metric (Celsius, kg, mm)</option>
-                  <option value="imperial">Imperial (Fahrenheit, lbs, inch)</option>
-                </select>
-              </div>
+
               <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
                 <input type="checkbox" id="notifs" checked={prefs.notifications_enabled ?? true} onChange={e => setPrefs({...prefs, notifications_enabled: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: 'var(--agri-green-600)' }} />
                 <div>
