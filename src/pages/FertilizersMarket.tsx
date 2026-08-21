@@ -98,12 +98,12 @@ export default function FertilizersMarket() {
 
   return (
     <div className="page-container" style={{ padding: 'var(--space-4)', maxWidth: '1200px', margin: '0 auto' }}>
-      <header className="page-header" style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Leaf size={28} color="var(--leaf-green-500)" />
+      <header className="page-header bg-green-800 shadow-md p-6 rounded-xl mb-6">
+        <h1 className="text-white text-2xl font-bold flex items-center gap-2">
+          <Leaf size={28} className="text-white" />
           {isMl ? 'സർക്കാർ വളം വിപണി' : 'Government Fertilizers Marketplace'}
         </h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+        <p className="text-white opacity-90 mt-2">
           {isMl ? 'സബ്സിഡി നിരക്കിൽ വളങ്ങൾ വാങ്ങുക' : 'Purchase subsidized fertilizers directly through government schemes'}
         </p>
       </header>
@@ -136,23 +136,13 @@ export default function FertilizersMarket() {
         gap: '1.5rem'
       }}>
         {filteredFertilizers.map((item) => (
-          <div key={item.id} style={{
-            backgroundColor: 'var(--bg-card)',
-            borderRadius: 'var(--radius-xl)',
-            border: '1px solid var(--border-color)',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-          }}>
+          <div key={item.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col overflow-hidden">
             <img 
               src={item.imageUrl} 
               alt={item.nameEn} 
-              className="w-full h-48 object-cover rounded-t-xl mb-4 border-b border-gray-200" 
-              style={{ width: '100%', height: '12rem', objectFit: 'cover', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}
+              className="w-full h-48 object-cover border-b border-gray-100" 
             />
-            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem', flex: 1 }}>
+            <div className="p-5 flex flex-col flex-grow">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <span style={{
                   backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -200,28 +190,13 @@ export default function FertilizersMarket() {
               </div>
             </div>
 
-            <div style={{ padding: '1rem 1.5rem', backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
+            <div className="px-5 pb-5 mt-auto">
               {item.stock > 0 ? (
                 <a
                   href={item.externalLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    padding: '0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--leaf-green-600)',
-                    color: '#ffffff',
-                    fontWeight: '600',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s',
-                    textDecoration: 'none'
-                  }}
+                  className="block w-full text-center bg-green-700 hover:bg-green-800 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 mt-4"
                 >
                   <ShoppingCart size={18} />
                   {isMl ? 'ഔദ്യോഗിക പോർട്ടലിൽ വാങ്ങുക ↗' : 'Buy on Govt Portal ↗'}
@@ -229,20 +204,7 @@ export default function FertilizersMarket() {
               ) : (
                 <button
                   disabled
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    padding: '0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--bg-card)',
-                    color: 'var(--text-muted)',
-                    fontWeight: '600',
-                    border: '1px solid var(--border-color)',
-                    cursor: 'not-allowed'
-                  }}
+                  className="w-full text-center bg-gray-100 text-gray-500 font-medium py-2.5 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 mt-4 border border-gray-200"
                 >
                   <ShoppingCart size={18} />
                   {isMl ? 'ലഭ്യമല്ല' : 'Unavailable'}
