@@ -316,8 +316,9 @@ ${JSON.stringify(chunk)}`;
 
 /**
  * Identifies crop disease using Groq Vision API, falling back to OpenAI if Groq Vision is unavailable.
+ * @param cropType - Optional: 'coconut' | 'rice' | 'banana' to focus the diagnosis
  */
-export async function identifyCropDisease(base64Image: string, lang: string): Promise<string> {
+export async function identifyCropDisease(base64Image: string, lang: string, cropType?: string): Promise<string> {
   if (!GROQ_API_KEY) {
     throw new Error('Groq API Key is missing. Please configure VITE_GROQ_API_KEY.');
   }
@@ -327,8 +328,28 @@ export async function identifyCropDisease(base64Image: string, lang: string): Pr
     ? base64Image 
     : `data:image/jpeg;base64,${base64Image}`;
 
+  // Build crop-specific context lines
+  const cropContext: Record<string, { en: string; ml: string }> = {
+    coconut: {
+      en: 'This image is from a COCONUT tree/palm. Focus specifically on known coconut diseases such as Bud Root Dropping, Stem Bleeding, Leaf Rot, Lethal Yellowing, Grey Leaf Blight, Root Wilt, Eriophyid Mite infestation, or Rhinoceros Beetle damage.',
+      ml: 'ഈ ചിത്രം ഒരു COCONUT / തേങ്ങ് മരത്തിൽ നിന്നുള്ളതാണ്. Bud Root Dropping, Stem Bleeding, Leaf Rot, Root Wilt, Lethal Yellowing, Grey Leaf Blight, Eriophyid Mite ബാധ, Rhinoceros Beetle നാശം എന്നിവ ശ്രദ്ധിക്കുക.'
+    },
+    rice: {
+      en: 'This image is from a RICE / PADDY crop. Focus specifically on known rice diseases such as Rice Blast, Brown Spot, Sheath Blight, Bacterial Leaf Blight, False Smut, Sheath Rot, Narrow Brown Leaf Spot, or Tungro Virus.',
+      ml: 'ഈ ചിത്രം RICE / PADDY / നെൽ വിളയിൽ നിന്നുള്ളതാണ്. Rice Blast, Brown Spot, Sheath Blight, Bacterial Leaf Blight, False Smut, Tungro Virus തുടങ്ങിയ നെൽ രോഗങ്ങൾ ശ്രദ്ധിക്കുക.'
+    },
+    banana: {
+      en: 'This image is from a BANANA plant. Focus specifically on known banana diseases such as Panama Wilt (Fusarium Wilt), Sigatoka Leaf Spot (Black and Yellow), Banana Bunchy Top Virus, Moko Disease (Bacterial Wilt), or Banana Xanthomonas Wilt.',
+      ml: 'ഈ ചിത്രം ഒരു BANANA / വാഴ ചെടിയിൽ നിന്നുള്ളതാണ്. Panama Wilt, Sigatoka Leaf Spot, Banana Bunchy Top Virus, Moko Disease, Banana Xanthomonas Wilt തുടങ്ങിയ വാഴ രോഗങ്ങൾ ശ്രദ്ധിക്കുക.'
+    }
+  };
+
+  const cropLine = cropType && cropContext[cropType] 
+    ? (lang === 'ml' ? cropContext[cropType].ml : cropContext[cropType].en) 
+    : '';
+
   const prompt = lang === 'ml'
-    ? `ഈ വിള ചിത്രത്തിൽ കാണുന്ന രോഗം കണ്ടെത്തുക.
+    ? `${cropLine ? cropLine + '\n\n' : ''}ഈ വിള ചിത്രത്തിൽ കാണുന്ന രോഗം കണ്ടെത്തുക.
 ദയവായി താഴെ പറയുന്ന വിവരങ്ങൾ കൃത്യമായി നൽകുക:
 1. രോഗത്തിന്റെ പേര് (മലയാളത്തിലും ഇംഗ്ലീഷിലും)
 2. രോഗബാധയുടെ തീവ്രത (ലഘുവായത് / മിതമായത് / ഗുരുതരമായത്)
@@ -338,7 +359,7 @@ export async function identifyCropDisease(base64Image: string, lang: string): Pr
 6. തടയാനുള്ള മുൻകരുതലുകൾ (Prevention tips)
 
 നിങ്ങളുടെ മറുപടി ലളിതവും കർഷകർക്ക് മനസ്സിലാകുന്നതുമായ രീതിയിൽ മലയാളത്തിൽ ആയിരിക്കണം. ശീർഷകങ്ങളും വിവരങ്ങളും വായിക്കാൻ എളുപ്പമുള്ള രീതിയിൽ മാർക്ക്ഡൗണിൽ ഫോർമാറ്റ് ചെയ്യുക.`
-    : `Analyze this crop image to identify any disease. 
+    : `${cropLine ? cropLine + '\n\n' : ''}Analyze this crop image to identify any disease. 
 Provide:
 1. Disease Name (and scientific name)
 2. Severity Level (Mild / Moderate / Severe)

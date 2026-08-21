@@ -103,6 +103,7 @@ export function Topbar({ onMenuClick, pageTitle }: { onMenuClick?: () => void; p
     if (path === '/govt-schemes') return t.nav.govtSchemes;
     if (path === '/farm-calendar') return t.nav.farmCalendar;
     if (path === '/disease-doctor') return t.nav.diseaseDoctor;
+    if (path === '/our-ml') return t.nav.ourML;
     if (path === '/smart-alerts') return t.nav.smartAlerts;
     if (path === '/farm-profile') return t.nav.farmProfile;
     if (path === '/settings') return t.nav.settings;

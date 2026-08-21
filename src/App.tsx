@@ -28,6 +28,7 @@ import FertilizersMarket from './pages/FertilizersMarket';
 import GovtSchemes from './pages/GovtSchemes';
 import FarmCalendar from './pages/FarmCalendar';
 import DiseaseDoctor from './pages/DiseaseDoctor';
+import OurML from './pages/OurML';
 import SmartAlerts from './pages/SmartAlerts';
 import FarmProfile from './pages/FarmProfile';
 import Settings from './pages/Settings';
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="/govt-schemes" element={<GovtSchemes />} />
               <Route path="/farm-calendar" element={<FarmCalendar />} />
               <Route path="/disease-doctor" element={<DiseaseDoctor />} />
+              <Route path="/our-ml" element={<OurML />} />
               <Route path="/smart-alerts" element={<SmartAlerts />} />
               <Route path="/farm-profile" element={<FarmProfile />} />
               <Route path="/settings" element={<Settings />} />

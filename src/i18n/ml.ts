@@ -13,6 +13,7 @@ export const ml: TranslationKeys = {
     aiAssistant: 'AI സഹായി',
     cropAdvisor: 'വിള ഉപദേഷ്ടാവ്',
     diseaseDoctor: 'രോഗ ഡോക്ടർ',
+    ourML: 'ഞങ്ങളുടെ ML',
     weather: 'കാലാവസ്ഥ',
     marketPrices: 'വിപണി വില',
     buyFertilisers: 'വളം വാങ്ങുക',

@@ -12,6 +12,7 @@ export const en = {
     aiAssistant: 'AI Assistant',
     cropAdvisor: 'Crop Advisor',
     diseaseDoctor: 'Disease Doctor',
+    ourML: 'Our ML',
     weather: 'Weather',
     marketPrices: 'Market Prices',
     buyFertilisers: 'Buy Fertilisers',

@@ -10,7 +10,7 @@ import {
 const NAV_ITEMS: {
   to: string;
   icon: React.ElementType;
-  labelKey: 'dashboard' | 'aiAssistant' | 'cropAdvisor' | 'weather' | 'marketPrices' | 'buyFertilisers' | 'govtSchemes' | 'farmCalendar' | 'diseaseDoctor' | 'smartAlerts';
+  labelKey: 'dashboard' | 'aiAssistant' | 'cropAdvisor' | 'weather' | 'marketPrices' | 'buyFertilisers' | 'govtSchemes' | 'farmCalendar' | 'diseaseDoctor' | 'ourML' | 'smartAlerts';
   isComingSoon?: boolean;
 }[] = [
   { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
@@ -22,6 +22,7 @@ const NAV_ITEMS: {
   { to: '/govt-schemes', icon: FileText, labelKey: 'govtSchemes' },
   { to: '/farm-calendar', icon: Calendar, labelKey: 'farmCalendar' },
   { to: '/disease-doctor', icon: FlaskConical, labelKey: 'diseaseDoctor' },
+  { to: '/our-ml', icon: Bot, labelKey: 'ourML' },
   { to: '/smart-alerts', icon: Zap, labelKey: 'smartAlerts' },
 ];
 
