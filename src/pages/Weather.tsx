@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getIpstackLocation } from '../hooks/useGeolocation';
+import { getIpstackLocation, reverseGeocodePerfect } from '../hooks/useGeolocation';
 import { supabase } from '../lib/supabase';
 import { Cloud, Droplets, Wind, Sunrise, AlertTriangle, MapPin, Sprout, Navigation } from 'lucide-react';
 import { format, addDays } from 'date-fns';
@@ -20,22 +20,7 @@ const WEATHER_DESC: Record<number, string> = {
   61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain', 80: 'Slight rain showers', 81: 'Moderate rain showers', 95: 'Thunderstorm',
 };
 
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { 'Accept-Language': 'en', 'User-Agent': 'KrishiMithram/1.0' } }
-    );
-    if (!res.ok) return 'Current Location';
-    const json = await res.json();
-    return (
-      json.address?.county || json.address?.state_district ||
-      json.address?.city || json.address?.town || 'Current Location'
-    );
-  } catch {
-    return 'Current Location';
-  }
-}
+
 
 // India bounding box (approximate)
 const INDIA_BOUNDS = { latMin: 6.5, latMax: 35.5, lngMin: 68.0, lngMax: 97.3 };
@@ -148,8 +133,25 @@ export default function Weather() {
             return;
           }
           setGeoStatus('granted');
-          const name = await reverseGeocode(lat, lng);
-          await fetchWeatherData(lat, lng, name);
+          const details = await reverseGeocodePerfect(lat, lng);
+          
+          // Auto-fill District in the database if user exists
+          if (user && details.district) {
+            try {
+              const { data: farm } = await supabase.from('farms').select('id, district, village, pincode').eq('owner_id', user.id).single();
+              if (farm && !farm.district) {
+                await supabase.from('farms').update({
+                  district: details.district,
+                  village: farm.village || details.village,
+                  pincode: farm.pincode || details.pincode,
+                  latitude: lat,
+                  longitude: lng
+                }).eq('id', farm.id);
+              }
+            } catch (e) {}
+          }
+          
+          await fetchWeatherData(lat, lng, details.locationName);
         },
         async () => {
           setGeoStatus('denied');

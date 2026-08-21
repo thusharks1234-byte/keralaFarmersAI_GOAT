@@ -3,12 +3,15 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { MapPin, Menu, Bell, User, Navigation } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { reverseGeocode } from '../hooks/useGeolocation';
+import { useSmartNotifications } from '../hooks/useSmartNotifications';
 
 export function Topbar({ onMenuClick, pageTitle }: { onMenuClick?: () => void; pageTitle?: string }) {
   const { t, language, setLanguage } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [weather, setWeather] = useState<{ temp: number; location: string; isLive?: boolean } | null>(null);
+
+  useSmartNotifications();
 
   useEffect(() => {
     const WEATHER_API_URL = import.meta.env.VITE_WEATHER_API_URL || 'https://api.open-meteo.com/v1/forecast';
@@ -21,6 +24,15 @@ export function Topbar({ onMenuClick, pageTitle }: { onMenuClick?: () => void; p
         })
         .catch(() => {});
     };
+
+    const handleLiveWeatherEvent = (e: CustomEvent) => {
+      setWeather({
+        temp: e.detail.temp,
+        location: e.detail.location,
+        isLive: true
+      });
+    };
+    window.addEventListener('km_live_weather', handleLiveWeatherEvent as EventListener);
 
     const fallbackToFarm = () => {
       const farmStr = localStorage.getItem('km_farm_quick');
@@ -74,6 +86,10 @@ export function Topbar({ onMenuClick, pageTitle }: { onMenuClick?: () => void; p
         fallbackToBrowserGeolocation();
       }
     });
+
+    return () => {
+      window.removeEventListener('km_live_weather', handleLiveWeatherEvent as EventListener);
+    };
   }, []);
 
   const getTitle = () => {

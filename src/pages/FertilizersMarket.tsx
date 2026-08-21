@@ -98,15 +98,17 @@ export default function FertilizersMarket() {
 
   return (
     <div className="page-container" style={{ padding: 'var(--space-4)', maxWidth: '1200px', margin: '0 auto' }}>
-      <header className="page-header bg-green-800 shadow-md p-6 rounded-xl mb-6">
-        <h1 className="text-white text-2xl font-bold flex items-center gap-2">
-          <Leaf size={28} className="text-white" />
-          {isMl ? 'സർക്കാർ വളം വിപണി' : 'Government Fertilizers Marketplace'}
-        </h1>
-        <p className="text-white opacity-90 mt-2">
-          {isMl ? 'സബ്സിഡി നിരക്കിൽ വളങ്ങൾ വാങ്ങുക' : 'Purchase subsidized fertilizers directly through government schemes'}
-        </p>
-      </header>
+      <div className="section-header" style={{ marginBottom: 'var(--space-6)' }}>
+        <div>
+          <h1 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Leaf size={28} style={{ color: 'var(--leaf-green-500)' }} />
+            {isMl ? 'സർക്കാർ വളം വിപണി' : 'Government Fertilizers Marketplace'}
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+            {isMl ? 'സബ്സിഡി നിരക്കിൽ വളങ്ങൾ വാങ്ങുക' : 'Purchase subsidized fertilizers directly through government schemes'}
+          </p>
+        </div>
+      </div>
 
       <div className="search-section" style={{ marginBottom: 'var(--space-6)', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1 1 300px' }}>
@@ -118,13 +120,14 @@ export default function FertilizersMarket() {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.75rem 1rem 0.75rem 2.75rem',
+              padding: '12px 16px 12px 44px',
               borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-color)',
+              border: '1px solid var(--border-strong)',
               backgroundColor: 'var(--bg-card)',
               color: 'var(--text-primary)',
               outline: 'none',
-              transition: 'border-color 0.2s'
+              fontFamily: 'inherit',
+              fontSize: '15px'
             }}
           />
         </div>
@@ -136,67 +139,66 @@ export default function FertilizersMarket() {
         gap: '1.5rem'
       }}>
         {filteredFertilizers.map((item) => (
-          <div key={item.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col overflow-hidden">
+          <div key={item.id} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <img 
               src={item.imageUrl} 
               alt={item.nameEn} 
-              className="w-full h-48 object-cover border-b border-gray-100" 
+              style={{ width: '100%', height: '192px', objectFit: 'cover', borderBottom: '1px solid var(--border)' }}
             />
-            <div className="p-5 flex flex-col flex-grow">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <span style={{
-                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                  color: 'var(--leaf-green-600)',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.75rem',
+                  backgroundColor: 'var(--light-green-100)',
+                  color: 'var(--agri-green-600)',
+                  padding: '4px 12px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '12px',
                   fontWeight: '600'
                 }}>
                   {item.tag}
                 </span>
                 {item.stock > 0 ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#10b981', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--agri-green-600)', fontSize: '14px', fontWeight: '500' }}>
                     <CheckCircle2 size={16} />
                     {isMl ? 'സ്റ്റോക്ക് ഉണ്ട്' : 'In Stock'}
                   </span>
                 ) : (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--red-500)', fontSize: '14px', fontWeight: '500' }}>
                     <AlertCircle size={16} />
                     {isMl ? 'സ്റ്റോക്ക് ഇല്ല' : 'Out of Stock'}
                   </span>
                 )}
               </div>
               
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem', lineHeight: '1.4' }}>
+              <h3 className="card-title" style={{ marginBottom: '8px' }}>
                 {isMl ? item.nameMl : item.nameEn}
               </h3>
               
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                <span style={{ display: 'block', marginBottom: '0.25rem' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px', flex: 1 }}>
+                <div style={{ marginBottom: '4px' }}>
                   <strong>{isMl ? 'സ്കീം' : 'Scheme'}:</strong> {isMl ? item.schemeMl : item.schemeEn}
-                </span>
-                <span style={{ display: 'block' }}>
+                </div>
+                <div>
                   <strong>{isMl ? 'തരം' : 'Type'}:</strong> {item.type}
-                </span>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '20px' }}>
+                <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   ₹{item.price.toFixed(2)}
                 </span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
                   {isMl ? '/ ബാഗ്' : '/ bag'}
                 </span>
               </div>
-            </div>
 
-            <div className="px-5 pb-5 mt-auto">
               {item.stock > 0 ? (
                 <a
                   href={item.externalLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full text-center bg-green-700 hover:bg-green-800 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 mt-4"
+                  className="btn btn-primary"
+                  style={{ width: '100%', textDecoration: 'none', display: 'flex', justifyContent: 'center' }}
                 >
                   <ShoppingCart size={18} />
                   {isMl ? 'ഔദ്യോഗിക പോർട്ടലിൽ വാങ്ങുക ↗' : 'Buy on Govt Portal ↗'}
@@ -204,7 +206,8 @@ export default function FertilizersMarket() {
               ) : (
                 <button
                   disabled
-                  className="w-full text-center bg-gray-100 text-gray-500 font-medium py-2.5 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 mt-4 border border-gray-200"
+                  className="btn btn-secondary"
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
                 >
                   <ShoppingCart size={18} />
                   {isMl ? 'ലഭ്യമല്ല' : 'Unavailable'}

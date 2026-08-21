@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.farms (
   farm_name TEXT,
   district TEXT,
   village TEXT,
+  pincode TEXT,
   latitude FLOAT,
   longitude FLOAT,
   area_acres FLOAT,

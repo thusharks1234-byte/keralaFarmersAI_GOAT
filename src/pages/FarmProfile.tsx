@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { KERALA_DISTRICTS, KARNATAKA_DISTRICTS } from '../lib/crop-rules';
 import type { Profile, Farm, SoilData, CropCycle, UserPreferences, Language } from '../types';
 import { Save, User, MapPin, FlaskConical, Sprout, Bell, Loader2, Navigation } from 'lucide-react';
 
@@ -58,9 +59,18 @@ export default function FarmProfile() {
 
   // Kerala bounding box (approximate)
   const KERALA_BOUNDS = { latMin: 8.0, latMax: 12.9, lngMin: 74.8, lngMax: 77.6 };
-  const isInsideKerala = (lat: number, lng: number) =>
-    lat >= KERALA_BOUNDS.latMin && lat <= KERALA_BOUNDS.latMax &&
-    lng >= KERALA_BOUNDS.lngMin && lng <= KERALA_BOUNDS.lngMax;
+  // Karnataka bounding box (approximate)
+  const KARNATAKA_BOUNDS = { latMin: 11.5, latMax: 18.5, lngMin: 74.0, lngMax: 78.6 };
+
+  const isInsideServiceArea = (lat: number, lng: number) => {
+    const inKerala =
+      lat >= KERALA_BOUNDS.latMin && lat <= KERALA_BOUNDS.latMax &&
+      lng >= KERALA_BOUNDS.lngMin && lng <= KERALA_BOUNDS.lngMax;
+    const inKarnataka =
+      lat >= KARNATAKA_BOUNDS.latMin && lat <= KARNATAKA_BOUNDS.latMax &&
+      lng >= KARNATAKA_BOUNDS.lngMin && lng <= KARNATAKA_BOUNDS.lngMax;
+    return inKerala || inKarnataka;
+  };
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
@@ -69,16 +79,89 @@ export default function FarmProfile() {
     }
     setDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
-        if (!isInsideKerala(lat, lng)) {
-          setMessage({ text: 'Your location is Outside kerala Please enter your farm location manually', type: 'error' });
+        if (!isInsideServiceArea(lat, lng)) {
+          setMessage({ text: 'Your location is outside Kerala & Karnataka. Please enter your farm location manually.', type: 'error' });
           setDetectingLocation(false);
           return;
         }
+
+        // Save coordinates immediately
         setFarm(prev => ({ ...prev, latitude: lat, longitude: lng }));
-        setMessage({ text: '📍 Location detected! Save your profile to apply.', type: 'success' });
-        setTimeout(() => setMessage(null), 4000);
+
+        // Reverse geocode via OpenStreetMap Nominatim (free, no key)
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const geoData = await res.json();
+          const addr = geoData?.address || {};
+
+          // Extract district — Nominatim returns county / state_district / city_district
+          const rawDistrict =
+            addr.county ||
+            addr.state_district ||
+            addr.city ||
+            addr.town ||
+            '';
+
+          // Robustly match the district to our exact dropdown options
+          const allDistricts = [...KERALA_DISTRICTS, ...KARNATAKA_DISTRICTS];
+          let matchedDistrict = null;
+          
+          if (rawDistrict) {
+            const rawLower = rawDistrict.toLowerCase().replace(' district', '').trim();
+            matchedDistrict = allDistricts.find(d => {
+              const dl = d.toLowerCase();
+              return dl === rawLower || dl.includes(rawLower) || rawLower.includes(dl.split(' ')[0]);
+            }) || rawDistrict; // Fallback to raw if not found, though it should find it
+          }
+
+          const detectedVillage =
+            addr.village ||
+            addr.suburb ||
+            addr.town ||
+            addr.city ||
+            null;
+            
+          const detectedPincode = addr.postcode || null;
+
+          setFarm(prev => ({
+            ...prev,
+            ...(matchedDistrict ? { district: matchedDistrict } : {}),
+            ...(detectedVillage && !prev.village ? { village: detectedVillage } : {}),
+            ...(detectedPincode && !prev.pincode ? { pincode: detectedPincode } : {}),
+          }));
+
+          const locationParts = [matchedDistrict, detectedVillage, detectedPincode].filter(Boolean);
+          
+          let weatherStr = '';
+          try {
+            const WEATHER_API_URL = import.meta.env.VITE_WEATHER_API_URL || 'https://api.open-meteo.com/v1/forecast';
+            const wRes = await fetch(`${WEATHER_API_URL}?latitude=${lat}&longitude=${lng}&current_weather=true`);
+            const wData = await wRes.json();
+            const temp = Math.round(wData.current_weather.temperature);
+            weatherStr = ` | Weather: ${temp}°C 🌤️`;
+            
+            // Tell Topbar to update to live weather immediately
+            window.dispatchEvent(new CustomEvent('km_live_weather', { 
+              detail: { temp, location: matchedDistrict || 'My Location' } 
+            }));
+          } catch (e) {}
+
+          const locationLabel = locationParts.length > 0
+            ? `📍 Location detected: ${locationParts.join(', ')}${weatherStr}. Save to apply.`
+            : `📍 Location detected!${weatherStr} Save your profile to apply.`;
+
+          setMessage({ text: locationLabel, type: 'success' });
+        } catch {
+          // Geocoding failed but coordinates are saved — still useful
+          setMessage({ text: '📍 Location coordinates saved. Save profile to apply.', type: 'success' });
+        }
+
+        setTimeout(() => setMessage(null), 6000);
         setDetectingLocation(false);
       },
       (err) => {
@@ -197,6 +280,8 @@ export default function FarmProfile() {
         }
       }
 
+
+
       // 4. Preferences
       const { error: prefErr } = await supabase.from('user_preferences').upsert({
         owner_id: user.id,
@@ -289,9 +374,16 @@ export default function FarmProfile() {
                 <label className="form-label">{t.profile.district}</label>
                 <select className="form-input form-select" value={farm.district || ''} onChange={e => setFarm({...farm, district: e.target.value})}>
                   <option value="">Select District...</option>
-                  {['Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha', 'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram', 'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod'].map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
+                  <optgroup label="🌴 Kerala">
+                    {KERALA_DISTRICTS.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="🌾 Karnataka">
+                    {KARNATAKA_DISTRICTS.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
               <div className="form-group">

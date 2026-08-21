@@ -45,28 +45,56 @@ interface UseGeolocationResult {
   retry: () => void;
 }
 
+import { KERALA_DISTRICTS, KARNATAKA_DISTRICTS } from '../lib/crop-rules';
+
+export interface LocationDetails {
+  district: string | null;
+  village: string | null;
+  pincode: string | null;
+  locationName: string;
+}
+
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  const details = await reverseGeocodePerfect(lat, lng);
+  return details.locationName;
+}
+
+export async function reverseGeocodePerfect(lat: number, lng: number): Promise<LocationDetails> {
   try {
-    // Free nominatim reverse geocode (no key required)
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
       { headers: { 'Accept-Language': 'en', 'User-Agent': 'KrishiMithram/1.0' } }
     );
-    if (!res.ok) return 'My Location';
+    if (!res.ok) throw new Error('Geocoding failed');
     const json = await res.json();
-    return (
-      json.address?.suburb ||
-      json.address?.neighbourhood ||
-      json.address?.city_district ||
-      json.address?.town ||
-      json.address?.city ||
-      json.address?.county ||
-      json.address?.state_district ||
-      json.address?.state ||
-      'My Location'
-    );
+    const addr = json.address || {};
+
+    const rawDistrict = addr.county || addr.state_district || addr.city || addr.town || '';
+    const allDistricts = [...KERALA_DISTRICTS, ...KARNATAKA_DISTRICTS];
+    
+    let matchedDistrict = null;
+    if (rawDistrict) {
+      const rawLower = rawDistrict.toLowerCase().replace(' district', '').trim();
+      matchedDistrict = allDistricts.find(d => {
+        const dl = d.toLowerCase();
+        return dl === rawLower || dl.includes(rawLower) || rawLower.includes(dl.split(' ')[0]);
+      }) || rawDistrict;
+    }
+
+    const detectedVillage = addr.village || addr.suburb || addr.town || addr.city || null;
+    const detectedPincode = addr.postcode || null;
+
+    const parts = [matchedDistrict, detectedVillage].filter(Boolean);
+    const locationName = parts.length > 0 ? parts.join(', ') : 'My Location';
+
+    return {
+      district: matchedDistrict,
+      village: detectedVillage,
+      pincode: detectedPincode,
+      locationName,
+    };
   } catch {
-    return 'My Location';
+    return { district: null, village: null, pincode: null, locationName: 'My Location' };
   }
 }
 

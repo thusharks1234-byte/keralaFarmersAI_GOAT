@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Search, MapPin, Loader2, Filter } from 'lucide-react';
+import { Search, MapPin, Loader2, Filter, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { translateToMalayalam } from '../lib/ai-service';
@@ -49,7 +49,19 @@ export default function MarketPrices() {
   const [search, setSearch] = useState('');
   const [stateFilter, setStateFilter] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
+  const [showPreferred, setShowPreferred] = useState(false);
+  const [preferredCrops, setPreferredCrops] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('km_preferred_crops') || '[]'); } catch { return []; }
+  });
   const [dynamicTranslations, setDynamicTranslations] = useState<Record<string, string>>({});
+
+  const togglePreferred = (commodity: string) => {
+    setPreferredCrops(prev => {
+      const newCrops = prev.includes(commodity) ? prev.filter(c => c !== commodity) : [...prev, commodity];
+      localStorage.setItem('km_preferred_crops', JSON.stringify(newCrops));
+      return newCrops;
+    });
+  };
 
   const translate = (text: string) => {
     if (language !== 'ml' || !text) return text;
@@ -147,7 +159,8 @@ export default function MarketPrices() {
     const matchesSearch = r.commodity.toLowerCase().includes(s) || r.market.toLowerCase().includes(s);
     const matchesState = stateFilter ? r.state.toLowerCase() === stateFilter.toLowerCase() : true;
     const matchesDistrict = districtFilter ? r.district.toLowerCase() === districtFilter.toLowerCase() : true;
-    return matchesSearch && matchesState && matchesDistrict;
+    const matchesPreferred = showPreferred ? preferredCrops.includes(r.commodity) : true;
+    return matchesSearch && matchesState && matchesDistrict && matchesPreferred;
   });
 
   const uniqueStates = Array.from(new Set(data.map(d => d.state))).sort();
@@ -211,6 +224,15 @@ export default function MarketPrices() {
               ))}
             </select>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button
+              className={`btn btn-sm ${showPreferred ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setShowPreferred(!showPreferred)}
+              style={{ gap: '6px' }}
+            >
+              <Star size={16} fill={showPreferred ? "currentColor" : "none"} /> {showPreferred ? (language === 'ml' ? 'എല്ലാം കാണുക' : 'Show All') : (language === 'ml' ? 'പ്രിയപ്പെട്ടവ മാത്രം' : 'Preferred Only')}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -228,10 +250,19 @@ export default function MarketPrices() {
           {filteredData.map((item, i) => (
             <div key={i} className="card" style={{ padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)' }}>{translate(item.commodity)}</h3>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                    <MapPin size={12} /> {translate(item.market)}, {translate(item.district)}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <button 
+                    onClick={() => togglePreferred(item.commodity)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: '-2px', color: preferredCrops.includes(item.commodity) ? '#F59E0B' : '#CBD5E1' }}
+                    title={preferredCrops.includes(item.commodity) ? "Remove from preferred" : "Add to preferred"}
+                  >
+                    <Star size={22} fill={preferredCrops.includes(item.commodity) ? '#F59E0B' : 'none'} strokeWidth={2} />
+                  </button>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)' }}>{translate(item.commodity)}</h3>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                      <MapPin size={12} /> {translate(item.market)}, {translate(item.district)}
+                    </div>
                   </div>
                 </div>
                 <div className="badge badge-green" style={{ textTransform: 'capitalize' }}>
