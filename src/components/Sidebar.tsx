@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -6,17 +7,22 @@ import {
   FileText, Calendar, Zap, User, Settings, LogOut, Sprout, ShoppingBag
 } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' as const },
-  { to: '/ai-assistant', icon: Bot, labelKey: 'aiAssistant' as const },
-  { to: '/crop-advisor', icon: Leaf, labelKey: 'cropAdvisor' as const },
-  { to: '/weather', icon: Cloud, labelKey: 'weather' as const },
-  { to: '/market-prices', icon: TrendingUp, labelKey: 'marketPrices' as const },
-  { to: '/fertilizers', icon: ShoppingBag, labelKey: 'buyFertilisers' as const },
-  { to: '/govt-schemes', icon: FileText, labelKey: 'govtSchemes' as const },
-  { to: '/farm-calendar', icon: Calendar, labelKey: 'farmCalendar' as const },
-  { to: '/disease-doctor', icon: FlaskConical, labelKey: 'diseaseDoctor' as const },
-  { to: '/smart-alerts', icon: Zap, labelKey: 'smartAlerts' as const },
+const NAV_ITEMS: {
+  to: string;
+  icon: React.ElementType;
+  labelKey: 'dashboard' | 'aiAssistant' | 'cropAdvisor' | 'weather' | 'marketPrices' | 'buyFertilisers' | 'govtSchemes' | 'farmCalendar' | 'diseaseDoctor' | 'smartAlerts';
+  isComingSoon?: boolean;
+}[] = [
+  { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
+  { to: '/ai-assistant', icon: Bot, labelKey: 'aiAssistant' },
+  { to: '/crop-advisor', icon: Leaf, labelKey: 'cropAdvisor' },
+  { to: '/weather', icon: Cloud, labelKey: 'weather' },
+  { to: '/market-prices', icon: TrendingUp, labelKey: 'marketPrices' },
+  { to: '/fertilizers', icon: ShoppingBag, labelKey: 'buyFertilisers' },
+  { to: '/govt-schemes', icon: FileText, labelKey: 'govtSchemes' },
+  { to: '/farm-calendar', icon: Calendar, labelKey: 'farmCalendar' },
+  { to: '/disease-doctor', icon: FlaskConical, labelKey: 'diseaseDoctor' },
+  { to: '/smart-alerts', icon: Zap, labelKey: 'smartAlerts' },
 ];
 
 const BOTTOM_ITEMS = [
