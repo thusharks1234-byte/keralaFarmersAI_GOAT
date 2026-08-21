@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { to: '/crop-advisor', icon: Leaf, labelKey: 'cropAdvisor' as const },
   { to: '/weather', icon: Cloud, labelKey: 'weather' as const },
   { to: '/market-prices', icon: TrendingUp, labelKey: 'marketPrices' as const },
-  { to: '/buy-fertilisers', icon: ShoppingBag, labelKey: 'buyFertilisers' as const, isComingSoon: true },
+  { to: '/fertilizers', icon: ShoppingBag, labelKey: 'buyFertilisers' as const },
   { to: '/govt-schemes', icon: FileText, labelKey: 'govtSchemes' as const },
   { to: '/farm-calendar', icon: Calendar, labelKey: 'farmCalendar' as const },
   { to: '/disease-doctor', icon: FlaskConical, labelKey: 'diseaseDoctor' as const },

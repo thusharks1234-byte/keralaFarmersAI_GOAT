@@ -24,7 +24,7 @@ import AIAssistant from './pages/AIAssistant';
 import CropAdvisor from './pages/CropAdvisor';
 import Weather from './pages/Weather';
 import MarketPrices from './pages/MarketPrices';
-import BuyFertilisers from './pages/BuyFertilisers';
+import FertilizersMarket from './pages/FertilizersMarket';
 import GovtSchemes from './pages/GovtSchemes';
 import FarmCalendar from './pages/FarmCalendar';
 import DiseaseDoctor from './pages/DiseaseDoctor';
@@ -62,7 +62,7 @@ export default function App() {
               <Route path="/crop-advisor" element={<CropAdvisor />} />
               <Route path="/weather" element={<Weather />} />
               <Route path="/market-prices" element={<MarketPrices />} />
-              <Route path="/buy-fertilisers" element={<BuyFertilisers />} />
+              <Route path="/fertilizers" element={<FertilizersMarket />} />
               <Route path="/govt-schemes" element={<GovtSchemes />} />
               <Route path="/farm-calendar" element={<FarmCalendar />} />
               <Route path="/disease-doctor" element={<DiseaseDoctor />} />
