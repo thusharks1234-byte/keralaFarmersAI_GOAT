@@ -149,7 +149,9 @@ export default function FarmProfile() {
             window.dispatchEvent(new CustomEvent('km_live_weather', { 
               detail: { temp, location: matchedDistrict || 'My Location' } 
             }));
-          } catch (e) {}
+          } catch (e) {
+            console.warn('Weather fetch failed during location detection', e);
+          }
 
           const locationLabel = locationParts.length > 0
             ? `📍 Location detected: ${locationParts.join(', ')}${weatherStr}. Save to apply.`

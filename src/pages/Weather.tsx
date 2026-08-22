@@ -148,7 +148,9 @@ export default function Weather() {
                   longitude: lng
                 }).eq('id', farm.id);
               }
-            } catch (e) {}
+            } catch (e) {
+              console.warn('Farm auto-update failed', e);
+            }
           }
           
           await fetchWeatherData(lat, lng, details.locationName);
@@ -174,7 +176,7 @@ export default function Weather() {
     } else {
       tryBrowserGeo();
     }
-  }, [fetchWeatherData, loadFarmFallback]);
+  }, [fetchWeatherData, loadFarmFallback, user]);
 
 
 

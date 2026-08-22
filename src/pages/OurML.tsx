@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Upload, AlertCircle, Loader2, Leaf, ArrowRight, ImageIcon, Zap, Shield, FlaskConical, CheckCircle2, WifiOff } from 'lucide-react';
+import { Bot, Upload, AlertCircle, Loader2, Leaf, ArrowRight, ImageIcon, Zap, FlaskConical, CheckCircle2, WifiOff } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const ML_API_URL = (import.meta.env.VITE_ML_API_URL as string) || 'http://localhost:8787';
